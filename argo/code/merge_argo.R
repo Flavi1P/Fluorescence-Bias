@@ -8,11 +8,11 @@ library(readxl)
 library(lubridate)
 library(nnls)
 library(Metrics)
-source("Scripts/profile_numb.r")
-source("Scripts/zeu_moma.r")
-source("Scripts/phi_lm.R")
-source("Scripts/phi_stat.R")
-source("Scripts/phi_boot.R")
+source("functions/profile_numb.r")
+source("functions/zeu_moma.r")
+source("functions/phi_lm.R")
+source("functions/phi_stat.R")
+source("functions/phi_boot.R")
 
 
 
@@ -21,11 +21,11 @@ pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
 
 #global lovbio ####
 
-hplc <- read_csv("Scripts/Data/argo/hplc_argo")
-ref <- read_csv("Scripts/Data/argo/ref.csv")
-ref_bis <- read_csv("Scripts/Data/argo/ref_bis")
-map_vec <- read_csv("Scripts/Data/map_vec")
-first_profiles <- read_csv("Scripts/Data/argo/first_profiles")
+hplc <- read_csv("Data/argo/hplc_argo")
+ref <- read_csv("Data/argo/ref.csv")
+ref_bis <- read_csv("Data/argo/ref_bis")
+map_vec <- read_csv("Data/map_vec")
+first_profiles <- read_csv("Data/argo/first_profiles")
 first_profiles <- first_profiles[-1,]
 first_profiles$date <- date(first_profiles$date)
 ref <- bind_rows(ref, ref_bis)

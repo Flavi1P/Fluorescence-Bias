@@ -9,3 +9,4 @@ Le dossier "Fonctions" contient les codes des fonctions que j'utilise, avec une 
 </br>
 Le dossier "Archive" contient les codes que j'ai utilisé à un moment de mon stage mais qui ne servent pas dans l'étude finale.
 A line I wrote on my local computer
+A line I wrote from Rstudio

@@ -48,13 +48,7 @@ first_profiles$date[first_profiles$lovbio == "lovbio043b"] <- date("2015-01-20")
 #those two lines correct the date because the hplc sampling was done on this exact position at this day
 
 
-a <- 1
-for (i in 2:length(hplc$depth)){
-  hplc[i, "profile"] <- ifelse(hplc[i,"depth"]>=hplc[i-1, "depth"], a+1, a)
-  a <- ifelse(hplc[i,"depth"]>=hplc[i-1, "depth"], a+1, a)
-}
-
-hplc[1, "profile"] <- 1
+hplc$profile <- profile_numb(hplc$depth, "upward")
 
 
 
@@ -67,21 +61,22 @@ merged_dist <- merged_t
 merged_dist <- merged_dist[-c(1:14),]
 for (i in lovbio){
   t1 <- filter(first_profiles, lovbio == i)
-  t2 <- filter(hplc)
+  t2 <- filter(hplc, id == i)
   hplc_point <- cbind(t2$lon, t2$lat)
   argo_point <- cbind(rep(unique(t1$lon), length(hplc_point[,1])), rep(unique(t1$lat), length(hplc_point[,1])))
   distance <- distHaversine(hplc_point, argo_point)
   t2_lonround <- t2$lon_round[which(distance == min(distance))]
   t2_latround <- t2$lat_round[which(distance == min(distance))]
   t2 <- filter(t2, lon_round == unique(t2_lonround) & lat_round == unique(t2_latround))
-  merged_t <- left_join(t2,t1, by = c("depth", "id" = "lovbio"))
+  merged_t <- difference_left_join(t2,t1, by = c("depth"), max_dist = 1) %>%
+    mutate(depth_abs_diff = abs(depth.x - pres)) %>% 
+    filter(chla != "NA") %>% 
+    arrange(depth.x, depth_abs_diff) %>% 
+    group_by(depth.x) %>%
+    slice(1) %>% 
+    ungroup()
   merged_dist <- bind_rows(merged_dist, merged_t)
 }
-merged_dist <- filter(merged_dist, is.na(merged_dist$chla) == FALSE)
-merged_dist <- filter(merged_dist, chla_qc != 4)
-
-
-merged_dist <- merged_dist %>% group_by(depth, id, date.y) %>% summarise_all(mean)
 
 
 
@@ -100,9 +95,10 @@ ggplot(merged_dist_clean)+
   coord_quickmap()
 
 
-merged_dist_clean <- merged_dist_clean[order(merged_dist_clean$id),]
-merged_dist_clean$profile <- profile_numb(merged_dist_clean$depth, "downward")
-merged_dist_clean <- filter(merged_dist_clean, profile != 36)
+merged_dist_clean <- merged_dist_clean[order(merged_dist_clean$id.x),]
+merged_dist_clean$profile <- profile_numb(merged_dist_clean$depth.x, "downward")
+
+
 #Takuvik data ####
 
 hplc_tak <- read_csv("Scripts/Data/hplc_tak")

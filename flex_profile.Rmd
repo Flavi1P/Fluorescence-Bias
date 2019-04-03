@@ -43,18 +43,19 @@ profiles <- left_join(first_profiles, merged, by = c("chla", "lon" = "lon.y", "l
 Column {data-width=650}
 -----------------------------------------------------------------------
 
-### Chart A
+### Profile
 
 ```{r}
 selectInput("lovbio", label = "lovbio id",
-            choices = unique(first_profiles$lovbio))
+            choices = sort(unique(first_profiles$lovbio)))
 
 
 renderPlot({
   ggplot()+
   geom_path(aes(x = chla_adjusted, y = -pres), data = filter(first_profiles, lovbio == input$lovbio))+
   geom_point(aes(x = tchla, y = - depth), data = filter(merged, lovbio == input$lovbio))+
-  ggtitle(input$lovbio)
+  ggtitle(input$lovbio)+
+  theme_bw()
 })
 ```
 
@@ -64,22 +65,24 @@ renderPlot({
 Column {data-width=350}
 -----------------------------------------------------------------------
 
-### Chart B
+### Map
 
 ```{r}
 renderPlot({ggplot()+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
   geom_point(aes(x = lon, y = lat), data = filter(first_profiles, lovbio == input$lovbio), colour = "Red")+
-  coord_quickmap()
+  coord_quickmap()+
+  theme_bw()
 })
 ```
 
-### Chart C
+### Fluo vs HPLC tchla
 
 ```{r}
 renderPlot({ggplot()+
   geom_point(aes(x = tchla, y = chla), data = merged)+
-  geom_point(aes(x = tchla, y = chla), data = filter(merged, lovbio == input$lovbio), colour = "Red")
+  geom_point(aes(x = tchla, y = chla), data = filter(merged, lovbio == input$lovbio), colour = "Red")+
+    theme_bw()
 })
 ```
 

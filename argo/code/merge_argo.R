@@ -121,7 +121,7 @@ ggplot(ICB_profiles)+
 ggplot(NAT_ICB)+
   geom_point(aes(x = tchla, y = chla))
 
-NAT_IRS_list <- c("lovbio059c", "lovbio045b", "lovbio024c", "lovbio044b", "lovbio031c", "lovbio027c", "lovbio040b", "lovbio026c")
+NAT_IRS_list <- c("lovbio059c", "lovbio045b", "lovbio024c", "lovbio044b", "lovbio031c", "lovbio027b", "lovbio040b", "lovbio026c")
 NAT_IRS <- filter(merged_dist_clean, lovbio %in% NAT_IRS_list)
 IRS_profiles <- filter(first_profiles, lovbio %in% NAT_IRS_list)
 
@@ -134,9 +134,28 @@ ggplot(NAT_IRS)+
 ggplot(merged_dist_clean)+
   geom_point(aes(x = tchla, y = chla))+
   geom_point(aes(x = tchla, y = chla), data = NAT_IRS, colour = "Red")
+
+ggplot()+
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = ICB_profiles)+
+  geom_point(aes(x = tchla, y = -depth.x), data = NAT_ICB)+
+  ggtitle("NAT_ICB")+
+  ylim(-250,0)
+
+ggplot()+
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = IRS_profiles)+
+  geom_point(aes(x = tchla, y = -depth.x), data = NAT_IRS)+
+  ggtitle("NAT_IRS")+
+  ylim(-250,0)
+
+ggplot()+
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = LAS_profiles)+
+  geom_point(aes(x = tchla, y = -depth.x), data = NAT_LAS)+
+  ggtitle("NAT_LAS")+
+  ylim(-250,0)
+
 #Takuvik data ####
 
-hplc_tak <- read_csv("Scripts/Data/hplc_tak")
+hplc_tak <- read_csv("Data/hplc_tak")
 hplc_tak$lon_round <- round(hplc_tak$lon)
 hplc_tak$lat_round <- round(hplc_tak$lat)
 position_tak <- cbind(hplc_tak$lon, hplc_tak$lat)
@@ -166,7 +185,7 @@ ggplot(merged_dist2)+
 
 #Soclim####
 
-hplc_soclim <- read_csv("Scripts/Data/hplc_soclim")
+hplc_soclim <- read_csv("Data/hplc_soclim")
 hplc_soclim$date <- date(hplc_soclim$date)
 hplc_soclim$depth <- round(hplc_soclim$depth)
 
@@ -183,7 +202,7 @@ ggplot(merged_soclim)+
 
 #mobydick####
 
-hplc_mduf <- read_csv("Scripts/Data/argo/hplc_mduf")
+hplc_mduf <- read_csv("Data/argo/hplc_mduf")
 hplc_mduf$date <- date(hplc_mduf$date) +1
 
 merged_mduf <- left_join(hplc_mduf, filter(first_profiles, lovbio == "lovbio111b"), by = c("date", "depth")) %>% filter(is.na(chla) == FALSE)
@@ -196,10 +215,10 @@ ggplot(merged_mduf)+
 #merge all database####
 
 
-merged_data <- select(merged_dist_clean, new_date, id, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
+merged_data <- select(merged_dist_clean, new_date, id.x, depth.x, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
 merged_data2 <- select(merged_dist2, date.y, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
 
-merged_data <- rename_(merged_data, "date" = "new_date", "lovbio" = "id")
+merged_data <- rename_(merged_data, "date" = "new_date", "lovbio" = "id.x", "depth" = "depth.x")
 merged_data2 <- rename_(merged_data2, "date" = "date.y")
 
 merged_soclim <- select(merged_soclim, date, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
@@ -222,7 +241,8 @@ ggplot(merged_full)+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
   coord_quickmap()
 
-
+ggplot(merged_full)+
+  geom_point(aes(x = tchla, y = chla))
 
 
 momadata <- merged_full %>% filter(lovbio != "lovapm002a" & lovbio != "lovbio067c" & profile != 36) %>% select(depth, tchla, profile, lovbio)
@@ -264,7 +284,7 @@ merged_argo <- merged_full %>% mutate(  zze = depth /ze,
 
 table(merged_argo$optical_layer)
 
-write_csv(merged_argo, "Scripts/Data/merged_argo")
+write_csv(merged_argo, "Data/merged_argo")
 
 
 

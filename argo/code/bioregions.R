@@ -14,7 +14,7 @@ longhurst_sf <- read_sf(dsn = path.expand(path), quiet = TRUE)
 
 names(longhurst_sf) <- c("code", "region", "geometry")
 
-longhurst_sf %>% ggplot() + geom_sf(aes(fill = code))
+#longhurst_sf %>% ggplot() + geom_sf(aes(fill = code))
 
 pnts_sf <- do.call("st_sfc",c(lapply(1:nrow(argo),
                                      function(i) {st_point(as.numeric(argo[i,c("lon.x", "lat.x") ]))}), list("crs" = 4326))) 
@@ -30,17 +30,31 @@ ggplot(argo)+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
   coord_quickmap()
 
+argo <- filter(argo, optical_layer < 4)
+
+nbr_match_region<- count(argo, "code")
+nbr_float_region <- argo %>% filter(duplicated(lovbio) == FALSE) %>% count("code")
+resume_region <- bind_cols(nbr_float_region, nbr_match_region) %>% select(1,2,4)
+
+names(resume_region) <- c("code", "nbr_of_float", "nbr_of_match")
+
+
 argo <- argo %>% mutate(fluo = chla_adjusted * 2,
                         ratio = fluo/tchla)
 
 region_argo <- argo  %>% group_by(code) %>% summarise_at(vars(ratio), c(mean, sd), na.rm = TRUE) %>% ungroup()
 names(region_argo) <- c("code", "mean", "sd")
+
+region_argo <- left_join(region_argo, resume_region)
+
 region_argo$sd <- ifelse(region_argo$sd > region_argo$mean, region_argo$mean, region_argo$sd)
 
 codref <- read_excel("Data/Longhurst_Province_Summary.xls", 
                      range = "A17:B70", col_names = FALSE)
 names(codref) <- c("code", "region")
 region_argo <- left_join(region_argo, codref)
+
+region_argo <- filter(region_argo, code != "ANTA")#delete this region because we only have 1 observation
 
 g1 <- ggplot(region_argo)+
   geom_col(aes(x = reorder(code, mean), y = mean, fill = code))+
@@ -51,22 +65,15 @@ g1 <- ggplot(region_argo)+
   geom_errorbar(aes(code, ymax = 1, ymin = 1),
                 size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
   theme(axis.text.x = element_text(angle = 45))+
+  geom_text(aes(x = code, y = mean + sd + 0.5, label = nbr_of_float))+
   guides(fill = FALSE)+
   scale_fill_brewer(palette = "Set1")
 g1  
 
-g3 <- ggplot(afc_table)+
-  geom_point(aes(x = lon.x, y = lat.x, colour = code), size = 2)+
-  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
-  xlab("lon")+ylab("lat")+
-  coord_quickmap()+
-  scale_color_brewer(palette = "Set1")+
-  theme_bw()
 
-g3
 #AFC####
 afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.x, lat.x))
-afc_table <- filter(afc_table, code != "ANTA" & code != "ARCT")
+afc_table <- filter(afc_table, code != "ANTA")
 
 afc_argo <- cca(na.omit(select(afc_table, pigments)))
 test <- envfit(afc_argo, select(afc_table, micro, nano, pico, ratio))
@@ -92,6 +99,15 @@ g2 <- ggplot()+
 g2
 grid.arrange(g1,g2, ncol = 2)
 
+g3 <- ggplot(afc_table)+
+  geom_point(aes(x = lon.x, y = lat.x, colour = code), size = 2)+
+  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
+  xlab("lon")+ylab("lat")+
+  coord_quickmap()+
+  scale_color_brewer(palette = "Set1")+
+  theme_bw()
+
+g3
 
 
 
@@ -103,3 +119,5 @@ define_region <- function(row, col){
 print(g1, vp = define_region(1,1))
 print(g2, vp = define_region(1:2, 2))
 print(g3, vp = define_region(2,1))
+
+

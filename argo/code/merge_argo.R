@@ -8,6 +8,7 @@ library(readxl)
 library(lubridate)
 library(nnls)
 library(Metrics)
+library(gridExtra)
 source("functions/profile_numb.r")
 source("functions/zeu_moma.r")
 source("functions/phi_lm.R")
@@ -98,9 +99,9 @@ ggplot(merged_dist_clean)+
 merged_dist_clean <- merged_dist_clean[order(merged_dist_clean$id.x),]
 merged_dist_clean$profile <- profile_numb(merged_dist_clean$depth.x, "downward")
 
-NAT_LAS <- filter(merged_dist_clean, lovbio %in% c("lovbio014b", "lovbio030b", "lovbio032d", "lovbio028b", "lovbio011b", "lovbio021c", "lovbio012b"))
 NAT_LAS_list <- c("lovbio014b", "lovbio030b", "lovbio032d", "lovbio028b", "lovbio011b", "lovbio021c", "lovbio012b")
-LAS_profiles <- filter(first_profiles, lovbio %in% NAT_LAS_list)
+NAT_LAS <- filter(merged_dist_clean, lovbio %in% NAT_LAS_list)
+LAS_profiles <- filter(first_profiles, lovbio %in% NAT_LAS$lovbio)
 ggplot(LAS_profiles)+
   geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio))+
   ylim(-250,0)
@@ -113,9 +114,10 @@ ggplot(NAT_LAS)+
 ggplot(NAT_LAS)+
   geom_point(aes(x = tchla, y = chla, colour = depth.x))
 
-NAT_ICB <- filter(merged_dist_clean, lovbio %in% c("lovbio061c", "lovbio022b", "lovbio029b", "lovbio020b", "lovbio023b", "lovbio013b", "lovbio025c", "lovbio038b"))
+
 NAT_ICB_list <-  c("lovbio061c", "lovbio022b", "lovbio029b", "lovbio020b", "lovbio023b", "lovbio013b", "lovbio025c", "lovbio038b")
-ICB_profiles <- filter(first_profiles, lovbio %in% NAT_ICB_list)
+NAT_ICB <- filter(merged_dist_clean, lovbio %in% NAT_ICB_list)
+ICB_profiles <- filter(first_profiles, lovbio %in% NAT_ICB$lovbio)
 ggplot(ICB_profiles)+
   geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio))
 ggplot(NAT_ICB)+
@@ -123,7 +125,7 @@ ggplot(NAT_ICB)+
 
 NAT_IRS_list <- c("lovbio059c", "lovbio045b", "lovbio024c", "lovbio044b", "lovbio031c", "lovbio027b", "lovbio040b", "lovbio026c")
 NAT_IRS <- filter(merged_dist_clean, lovbio %in% NAT_IRS_list)
-IRS_profiles <- filter(first_profiles, lovbio %in% NAT_IRS_list)
+IRS_profiles <- filter(first_profiles, lovbio %in% NAT_IRS$lovbio)
 
 ggplot(IRS_profiles)+
   geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio))+
@@ -135,23 +137,25 @@ ggplot(merged_dist_clean)+
   geom_point(aes(x = tchla, y = chla))+
   geom_point(aes(x = tchla, y = chla), data = NAT_IRS, colour = "Red")
 
-ggplot()+
+g1 <- ggplot()+
   geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = ICB_profiles)+
   geom_point(aes(x = tchla, y = -depth.x), data = NAT_ICB)+
   ggtitle("NAT_ICB")+
   ylim(-250,0)
 
-ggplot()+
+g2 <- ggplot()+
   geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = IRS_profiles)+
   geom_point(aes(x = tchla, y = -depth.x), data = NAT_IRS)+
   ggtitle("NAT_IRS")+
   ylim(-250,0)
 
-ggplot()+
+g3 <- ggplot()+
   geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = LAS_profiles)+
   geom_point(aes(x = tchla, y = -depth.x), data = NAT_LAS)+
   ggtitle("NAT_LAS")+
   ylim(-250,0)
+
+grid.arrange(g1,g2,g3, ncol = 3)
 
 #Takuvik data ####
 

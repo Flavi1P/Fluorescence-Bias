@@ -57,8 +57,7 @@ lovbio <- lovbio[lovbio %in% unique(first_profiles$lovbio)]
 
 hplc$lon_round <- round(hplc$lon,1)
 hplc$lat_round <- round(hplc$lat,1)
-merged_dist <- merged_t
-merged_dist <- merged_dist[-c(1:14),]
+merged_dist <- data.frame(matrix(ncol = 32, nrow = 0))
 for (i in lovbio){
   t1 <- filter(first_profiles, lovbio == i)
   t2 <- filter(hplc, id == i)
@@ -75,6 +74,7 @@ for (i in lovbio){
     group_by(depth.x) %>%
     slice(1) %>% 
     ungroup()
+  names(merged_dist) <- colnames(merged_t)
   merged_dist <- bind_rows(merged_dist, merged_t)
 }
 
@@ -161,8 +161,7 @@ hplc_tak$lat_round <- round(hplc_tak$lat)
 position_tak <- cbind(hplc_tak$lon, hplc_tak$lat)
 tak_profiles <- first_profiles[grep("takapm", first_profiles$lovbio),]
 
-merged_dist2 <- merged_t
-merged_dist2 <- merged_dist2[-c(1:22),]
+merged_dist2 <- data.frame(matrix(ncol = 27, nrow = 0))
 
 for (i in unique(tak_profiles$lovbio)){
   t <- filter(tak_profiles, lovbio == i)
@@ -172,6 +171,7 @@ for (i in unique(tak_profiles$lovbio)){
   tak_latround <- hplc_tak$lat_round[which(distance == min(distance))]
   t2 <- filter(hplc_tak, lon_round == tak_lonround & lat_round == tak_latround)
   merged_t <- left_join(t2,t, by = c("depth"))
+  names(merged_dist2) <- colnames(merged_t)
   merged_dist2 <- bind_rows(merged_dist2, merged_t)
 }
 

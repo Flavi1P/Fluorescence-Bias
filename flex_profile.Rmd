@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Profile visualisation"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -26,6 +26,8 @@ first_profiles$date <- date(first_profiles$date)
 ref <- bind_rows(ref, ref_bis)
 
 first_profiles$depth <- round(first_profiles$pres)
+first_profiles$lon <- round(first_profiles$lon, 2)
+first_profiles$lat <- round(first_profiles$lat, 2)
 
 hplc <- left_join(hplc, ref, by = c("id" = "lovbio"))
 first_profiles$number <- as.numeric(first_profiles$id)
@@ -40,27 +42,23 @@ profiles <- left_join(first_profiles, merged, by = c("chla", "lon" = "lon.y", "l
 ```
 
 
-Column {data-width=650}
+Column {data-width=400}
 -----------------------------------------------------------------------
 
 ### Profile
 
 ```{r}
 selectInput("lovbio", label = "lovbio id",
-            choices = sort(unique(first_profiles$lovbio)))
-
+            choices = sort(unique(first_profiles$lovbio)), selected = "lovbio012b")
 
 renderPlot({
   ggplot()+
-  geom_path(aes(x = chla_adjusted, y = -pres), data = filter(first_profiles, lovbio == input$lovbio))+
-  geom_point(aes(x = tchla, y = - depth), data = filter(merged, lovbio == input$lovbio))+
+  geom_path(aes(x = chla_adjusted, y = -pres), data = filter(first_profiles, lovbio == input$lovbio), colour = "limegreen", size = 1.1)+
+  geom_point(aes(x = tchla, y = - depth), data = filter(merged, lovbio == input$lovbio), colour = "Red")+
   ggtitle(input$lovbio)+
   theme_bw()
 })
 ```
-
-</br>
-</br>
 
 Column {data-width=350}
 -----------------------------------------------------------------------
@@ -68,10 +66,12 @@ Column {data-width=350}
 ### Map
 
 ```{r}
+
 renderPlot({ggplot()+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
   geom_point(aes(x = lon, y = lat), data = filter(first_profiles, lovbio == input$lovbio), colour = "Red")+
   coord_quickmap()+
+    ggtitle(paste("lon :", unique(first_profiles$lon[first_profiles$lovbio == input$lovbio]), "; lat :", unique(first_profiles$lat[first_profiles$lovbio == input$lovbio]), sep = " "))+
   theme_bw()
 })
 ```

@@ -55,8 +55,8 @@ hplc$profile <- profile_numb(hplc$depth, "upward")
 lovbio <- unique(hplc$id)
 lovbio <- lovbio[lovbio %in% unique(first_profiles$lovbio)]
 
-hplc$lon_round <- round(hplc$lon)
-hplc$lat_round <- round(hplc$lat)
+hplc$lon_round <- round(hplc$lon,1)
+hplc$lat_round <- round(hplc$lat,1)
 merged_dist <- merged_t
 merged_dist <- merged_dist[-c(1:14),]
 for (i in lovbio){
@@ -98,7 +98,42 @@ ggplot(merged_dist_clean)+
 merged_dist_clean <- merged_dist_clean[order(merged_dist_clean$id.x),]
 merged_dist_clean$profile <- profile_numb(merged_dist_clean$depth.x, "downward")
 
+NAT_LAS <- filter(merged_dist_clean, lovbio %in% c("lovbio014b", "lovbio030b", "lovbio032d", "lovbio028b", "lovbio011b", "lovbio021c", "lovbio012b"))
+NAT_LAS_list <- c("lovbio014b", "lovbio030b", "lovbio032d", "lovbio028b", "lovbio011b", "lovbio021c", "lovbio012b")
+LAS_profiles <- filter(first_profiles, lovbio %in% NAT_LAS_list)
+ggplot(LAS_profiles)+
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio))+
+  ylim(-250,0)
 
+ggplot(NAT_LAS)+
+  geom_point(aes(x = lon.x, y = lat.x, colour = "hplc"), size = 3)+
+  geom_point(aes(x = lon.y, y = lat.y, colour = "argo"))+
+  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
+  coord_quickmap()
+ggplot(NAT_LAS)+
+  geom_point(aes(x = tchla, y = chla, colour = depth.x))
+
+NAT_ICB <- filter(merged_dist_clean, lovbio %in% c("lovbio061c", "lovbio022b", "lovbio029b", "lovbio020b", "lovbio023b", "lovbio013b", "lovbio025c", "lovbio038b"))
+NAT_ICB_list <-  c("lovbio061c", "lovbio022b", "lovbio029b", "lovbio020b", "lovbio023b", "lovbio013b", "lovbio025c", "lovbio038b")
+ICB_profiles <- filter(first_profiles, lovbio %in% NAT_ICB_list)
+ggplot(ICB_profiles)+
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio))
+ggplot(NAT_ICB)+
+  geom_point(aes(x = tchla, y = chla))
+
+NAT_IRS_list <- c("lovbio059c", "lovbio045b", "lovbio024c", "lovbio044b", "lovbio031c", "lovbio027c", "lovbio040b", "lovbio026c")
+NAT_IRS <- filter(merged_dist_clean, lovbio %in% NAT_IRS_list)
+IRS_profiles <- filter(first_profiles, lovbio %in% NAT_IRS_list)
+
+ggplot(IRS_profiles)+
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio))+
+  ylim(-200,0)
+ggplot(NAT_IRS)+
+  geom_point(aes(x = tchla, y = chla))
+
+ggplot(merged_dist_clean)+
+  geom_point(aes(x = tchla, y = chla))+
+  geom_point(aes(x = tchla, y = chla), data = NAT_IRS, colour = "Red")
 #Takuvik data ####
 
 hplc_tak <- read_csv("Scripts/Data/hplc_tak")

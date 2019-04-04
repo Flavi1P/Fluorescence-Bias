@@ -23,7 +23,7 @@ ref <- filter(ref, number != 6901526)
 argo_data <- data.frame("date" = NA, "lat" = NA, "lon" = NA, "pres" = NA, "temp" = NA,
                      "chla" = NA, "chla_qc" = NA, "chla_adjusted" = NA, "chla_adjusted_qc" = NA, "id"= NA)
 
-first_profiles <- paste("Data/argo", "/MR", 6902737, "_001.nc", sep = "")
+first_profiles <- paste("Data/argo", "/MR", unique(ref$number), "_001.nc", sep = "")
 a <- 1
 
 #suite####
@@ -82,20 +82,28 @@ for(i in first_profiles){
   lon <- rep(lon[p], length(chla))
   lat <- rep(lat[p], length(chla))
   
-  id <- rep(substr(first_profiles[a], 21,27), length(chla))
+  id <- rep(substr(first_profiles[a], 13,19), length(chla))
   
-  nc_df <- data.frame("date" = time, "lat" = lat, "lon"=lon ,"pres" = pres, "temp" = temp, "chla" = chla, "chla_qc" = chla_qc, "chla_adjusted" = chla_adjusted, "chla_adjusted_qc" = chla_adjusted_qc, "id" = id)
+  nc_df <- data.frame("date" = time, "lat" = lat, "lon"=lon ,"pres" = pres, "temp" = temp, "chla" = chla, "chla_qc" = chla_qc, "chla_adjusted" = chla_adjusted, "chla_adjusted_qc" = chla_adjusted_qc, "id" = id, "down" = (rep("non_evaluate", length(pres))))
+  nc_df$down <- as.character(nc_df$down)
+  nc
   
+  if(unique(nc_df$id) %in% refbis$number){
+    for(j in c(1:length(na.omit(nc_df$pres)))-1){
+  nc_df$down[j] <- ifelse(nc_df$pres[j] < nc_df$pres[j+1], "down", "up")
+    }
+    nc_df <- filter(nc_df, down == "down")
+  }
+  
+nc_df <- nc_df %>% select(-down)
   argo_data <- bind_rows(argo_data, nc_df)
-  
-  
   }
   a <- a+1
   #setTxtProgressBar(pb, a)
   nc_close(nc)
 }
 
-write_csv(argo_data, "Scripts/Data/argo/first_profiles")
+write_csv(argo_data, "Data/argo/first_profiles")
 write_csv(refbis, "Scripts/Data/argo/ref_bis")
 
 ggplot(profile_shit)+

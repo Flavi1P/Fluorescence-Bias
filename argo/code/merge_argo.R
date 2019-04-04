@@ -87,7 +87,7 @@ merged_dist$lag <- merged_dist$date.y - merged_dist$new_date
 ggplot(filter(merged_dist, chla_qc < 4))+
   geom_point(aes(x = tchla, y = chla, colour = as.numeric(lag)))
 
-merged_dist_clean <- filter(merged_dist, lag < 3 & lag > -3)
+merged_dist_clean <- filter(merged_dist, lag < 15 & lag > -15)
 
 ggplot(merged_dist_clean)+
   geom_point(aes(x = lon.x, y = lat.x, colour = "hplc"), size = 3)+

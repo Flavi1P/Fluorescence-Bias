@@ -87,7 +87,17 @@ merged_dist$lag <- merged_dist$date.y - merged_dist$new_date
 ggplot(filter(merged_dist, chla_qc < 4))+
   geom_point(aes(x = tchla, y = chla, colour = as.numeric(lag)))
 
-merged_dist_clean <- filter(merged_dist, lag < 15 & lag > -15)
+merged_dist_clean <- filter(merged_dist, lag < 100)
+
+lag_by_float <- data.frame("lovbio" = NA, "lag_min" = NA)
+for (i in unique(merged_dist$lovbio)){
+  t <- filter(merged_dist, lovbio == i)
+  min_lag <- min(t$lag)
+  ttable <- data.frame("lovbio" = i, "lag_min" = min_lag)
+  lag_by_float <- bind_rows(lag_by_float, ttable)
+}
+
+merged_dist_clean <- left_join(merged_dist_clean, lag_by_float) %>% filter(lag == lag_min)
 
 ggplot(merged_dist_clean)+
   geom_point(aes(x = lon.x, y = lat.x, colour = "hplc"), size = 3)+

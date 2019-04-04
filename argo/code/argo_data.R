@@ -3,6 +3,11 @@ library(tidyverse)
 library(readxl)
 library(lubridate)
 
+
+#download.file("ftp://ftp.ifremer.fr/ifremer/argo/argo_bio-profile_index.txt",
+#              "argo/Data/index_bio.txt", quiet = FALSE, mode = "w",
+#              cacheOK = TRUE) 
+#biofiles <- read_csv("argo/Data/index_bio.txt", skip = 7)
 profiles <- list.files("Data/argo", full.names = TRUE)
 profile_names <- list.files("Data/argo")
 profiles <- profiles[grep(pattern = "^[M][R]", profile_names)]

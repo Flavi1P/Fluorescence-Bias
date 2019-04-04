@@ -17,7 +17,7 @@ names(longhurst_sf) <- c("code", "region", "geometry")
 #longhurst_sf %>% ggplot() + geom_sf(aes(fill = code))
 
 pnts_sf <- do.call("st_sfc",c(lapply(1:nrow(argo),
-                                     function(i) {st_point(as.numeric(argo[i,c("lon.x", "lat.x") ]))}), list("crs" = 4326))) 
+                                     function(i) {st_point(as.numeric(argo[i,c("lon.y", "lat.y") ]))}), list("crs" = 4326))) 
 pnts_trans <- st_transform(pnts_sf, 4326)
 longhurst_trans <- st_transform(longhurst_sf, 4326)  
 argo$code <- apply(st_intersects(longhurst_trans, pnts_trans, sparse = FALSE), 2, 
@@ -72,7 +72,7 @@ g1
 
 
 #AFC####
-afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.x, lat.x))
+afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.y, lat.y))
 afc_table <- filter(afc_table, code != "ANTA")
 
 afc_argo <- cca(na.omit(select(afc_table, pigments)))
@@ -100,7 +100,7 @@ g2
 grid.arrange(g1,g2, ncol = 2)
 
 g3 <- ggplot(afc_table)+
-  geom_point(aes(x = lon.x, y = lat.x, colour = code), size = 2)+
+  geom_point(aes(x = lon.y, y = lat.y, colour = code), size = 2)+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
   xlab("lon")+ylab("lat")+
   coord_quickmap()+

@@ -3,13 +3,13 @@ library(tidyverse)
 library(readxl)
 library(lubridate)
 
-profiles <- list.files("Scripts/Data/argo", full.names = TRUE)
-profile_names <- list.files("Scripts/Data/argo")
+profiles <- list.files("Data/argo", full.names = TRUE)
+profile_names <- list.files("Data/argo")
 profiles <- profiles[grep(pattern = "^[M][R]", profile_names)]
 profile_names <- profile_names[grep(pattern = "^[M][R]", profile_names)]
 profile_code <- as.numeric(substr(profile_names, 3, 9))
 
-ref <- read_csv("Scripts/Data/argo/ref.csv")
+ref <- read_csv("Data/argo/ref.csv")
 refbis <- data.frame("number" = c(6902737, 6902739, 6902735, 6902742, 6902743, 6902880), "lovbio" = c("lovbio103c", "lovbio107c", "lovbio100c", "lovapm002a", "lovapm004a", "lovbio111b"))
 refbis$lovbio <- as.character(refbis$lovbio)
 ref <- bind_rows(ref, refbis)
@@ -18,7 +18,7 @@ ref <- filter(ref, number != 6901526)
 argo_data <- data.frame("date" = NA, "lat" = NA, "lon" = NA, "pres" = NA, "temp" = NA,
                      "chla" = NA, "chla_qc" = NA, "chla_adjusted" = NA, "chla_adjusted_qc" = NA, "id"= NA)
 
-first_profiles <- paste("Scripts/Data/argo", "/MR", unique(ref$number), "_001.nc", sep = "")
+first_profiles <- paste("Data/argo", "/MR", 6902737, "_001.nc", sep = "")
 a <- 1
 
 #suite####

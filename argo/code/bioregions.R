@@ -10,7 +10,7 @@ argo <- read_csv("Data/merged_argo")
 map_vec <- read_csv("Data/map_vec")
 pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
 
-argo <- filter(argo, !(lovbio == "takapm005b" & depth == 20))
+argo <- filter(argo, !(lovbio == "takapm005b" & depth == 20))#remove an hplc match in a spike
 
 longhurst_sf <- read_sf(dsn = path.expand(path), quiet = TRUE)
 

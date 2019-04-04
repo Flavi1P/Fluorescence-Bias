@@ -21,17 +21,6 @@ argo_data <- data.frame("date" = NA, "lat" = NA, "lon" = NA, "pres" = NA, "temp"
 first_profiles <- paste("Scripts/Data/argo", "/MR", unique(ref$number), "_001.nc", sep = "")
 a <- 1
 
-#adopt a float####
-nc <- nc_open("Scripts/Data/argo/MR6902737_001.nc")
-names(nc$var)
-density <- ncvar_get(nc, "PSAL")
-depth <- ncvar_get(nc, "PRES")
-density <- density[,1]
-depth <- depth[,1]
-qplot(x = density, y = -depth, geom = "path")
-df <- data.frame("variable" = density, "depth" = depth)
-write_csv(df, "Scripts/Data/adoptafloat2")
-
 #suite####
 
 pb <- txtProgressBar(min = 1, max = length(first_profiles), style = 3)

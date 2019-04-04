@@ -46,6 +46,8 @@ hplc$lat <- ifelse(hplc$id %in% c("lovbio077b"), - hplc$lat, hplc$lat)
 hplc$lon <- ifelse(hplc$id %in% c("lovbio077b"), - hplc$lon, hplc$lon)
 first_profiles$date[first_profiles$lovbio == "lovbio057b"] <- date("2015-01-20")
 first_profiles$date[first_profiles$lovbio == "lovbio043b"] <- date("2015-01-20")
+
+
 #those two lines correct the date because the hplc sampling was done on this exact position at this day
 
 
@@ -62,6 +64,9 @@ merged_dist <- data.frame(matrix(ncol = 32, nrow = 0))
 for (i in lovbio){
   t1 <- filter(first_profiles, lovbio == i)
   t2 <- filter(hplc, id == i)
+  if(i == "lovbio079b"){
+    t2 <- filter(t2, date != "2015-03-20")
+  }
   hplc_point <- cbind(t2$lon, t2$lat)
   argo_point <- cbind(rep(unique(t1$lon), length(hplc_point[,1])), rep(unique(t1$lat), length(hplc_point[,1])))
   distance <- distHaversine(hplc_point, argo_point)
@@ -172,8 +177,10 @@ grid.arrange(g1,g2,g3, ncol = 3)
 hplc_tak <- read_csv("Data/hplc_tak")
 hplc_tak$lon_round <- round(hplc_tak$lon)
 hplc_tak$lat_round <- round(hplc_tak$lat)
+hplc_tak <- filter(hplc_tak, depth > 5)
 position_tak <- cbind(hplc_tak$lon, hplc_tak$lat)
 tak_profiles <- first_profiles[grep("takapm", first_profiles$lovbio),]
+
 
 merged_dist2 <- data.frame(matrix(ncol = 27, nrow = 0))
 
@@ -258,6 +265,8 @@ ggplot(merged_full)+
 ggplot(merged_full)+
   geom_point(aes(x = tchla, y = chla))
 
+table(merged_full$profile)
+
 
 momadata <- merged_full %>% filter(lovbio != "lovapm002a" & lovbio != "lovbio067c" & profile != 36) %>% select(depth, tchla, profile, lovbio)
 momadata <- na.omit(momadata)
@@ -297,6 +306,8 @@ merged_argo <- merged_full %>% mutate(  zze = depth /ze,
                                         picoquanti = pico * tchla) %>% ungroup()
 
 table(merged_argo$optical_layer)
+
+
 
 write_csv(merged_argo, "Data/merged_argo")
 

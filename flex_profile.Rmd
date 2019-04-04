@@ -42,7 +42,7 @@ profiles <- left_join(first_profiles, merged, by = c("chla", "lon" = "lon.y", "l
 ```
 
 
-Column {data-width=400}
+Column {data-width=500}
 -----------------------------------------------------------------------
 
 ### Profile
@@ -56,7 +56,8 @@ renderPlot({
   geom_path(aes(x = chla_adjusted, y = -pres), data = filter(first_profiles, lovbio == input$lovbio), colour = "limegreen", size = 1.1)+
   geom_point(aes(x = tchla, y = - depth), data = filter(merged, lovbio == input$lovbio), colour = "Red")+
   ggtitle(input$lovbio)+
-  theme_bw()
+  theme_bw()+
+    ylim(-250,0)
 })
 ```
 
@@ -71,7 +72,7 @@ renderPlot({ggplot()+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
   geom_point(aes(x = lon, y = lat), data = filter(first_profiles, lovbio == input$lovbio), colour = "Red")+
   coord_quickmap()+
-    ggtitle(paste("lon :", unique(first_profiles$lon[first_profiles$lovbio == input$lovbio]), "; lat :", unique(first_profiles$lat[first_profiles$lovbio == input$lovbio]), sep = " "))+
+    ggtitle(paste("lon :", unique(first_profiles$lon[first_profiles$lovbio == input$lovbio]), "; lat :", unique(first_profiles$lat[first_profiles$lovbio == input$lovbio]), "; date :", unique(first_profiles$date[first_profiles$lovbio == input$lovbio]),  sep = " "))+
   theme_bw()
 })
 ```
@@ -81,7 +82,7 @@ renderPlot({ggplot()+
 ```{r}
 renderPlot({ggplot()+
   geom_point(aes(x = tchla, y = chla), data = merged)+
-  geom_point(aes(x = tchla, y = chla), data = filter(merged, lovbio == input$lovbio), colour = "Red")+
+  geom_point(aes(x = tchla, y = chla), data = filter(merged, lovbio == input$lovbio), colour = "Red", size = 3)+
     theme_bw()
 })
 ```

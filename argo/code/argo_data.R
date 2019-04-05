@@ -2,6 +2,7 @@ library(ncdf4)
 library(tidyverse)
 library(readxl)
 library(lubridate)
+library(plyr)
 
 
 #download.file("ftp://ftp.ifremer.fr/ifremer/argo/argo_bio-profile_index.txt",
@@ -24,6 +25,9 @@ argo_data <- data.frame("date" = NA, "lat" = NA, "lon" = NA, "pres" = NA, "temp"
                      "chla" = NA, "chla_qc" = NA, "chla_adjusted" = NA, "chla_adjusted_qc" = NA, "id"= NA)
 
 first_profiles <- paste("Data/argo", "/MR", unique(ref$number), "_001.nc", sep = "")
+first_profiles[which(first_profiles == "Data/argo/MR6901521_001.nc")] <- "Data/argo/MR6901521_001D.nc"
+first_profiles[which(first_profiles == "Data/argo/MR6901524_001.nc")] <- "Data/argo/MR6901524_001D.nc"
+
 a <- 1
 
 #suite####

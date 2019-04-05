@@ -10,6 +10,8 @@ pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
 
 map_vec <- read_csv("Data/map_vec")
 merged_argo <- read_csv("Data/merged_argo")
+merged_argo <- filter(merged_argo, lovbio != "lovbio067c" & lovbio != "lovbio083d" & lovbio != "lovbio085d" & lovbio != "lovbio090d") #filter profile with only 1 match
+
 
 ggplot(merged_argo)+
   geom_point(aes(x = lon.x, y = lat.x, colour = "hplc"), size = 3)+
@@ -17,22 +19,11 @@ ggplot(merged_argo)+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
   coord_quickmap()
 
-#redefine optical_layer####
-
-merged_argo <- merged_argo %>% mutate(pd = ze/4.6)
-merged_argo <- merged_argo[is.na(merged_argo$pd) == FALSE,]
-for(i in 1:nrow(merged_argo)){
-  if(merged_argo[i,]$depth <= merged_argo[i,]$pd){
-    merged_argo[i,]$optical_layer = 1
-  }
-  if(merged_argo[i,]$depth <= merged_argo[i,]$ze & merged_argo[i,]$depth > merged_argo[i,]$pd){
-    merged_argo[i,]$optical_layer = 2
-  }
-  if(merged_argo[i,]$depth <= 1.5 * merged_argo[i,]$ze & merged_argo[i,]$depth > merged_argo[i,]$ze){
-    merged_argo[i,]$optical_layer = 3
-  }
-}
-
+ggplot(merged_argo)+
+  geom_point(aes(x = lon.y, y = lat.y, colour = ze))+
+  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
+  coord_quickmap()+
+  scale_color_viridis_c()
 
 #phi####
 merged_argo$fluo <- merged_argo$chla_adjusted * 2
@@ -392,3 +383,20 @@ g8
 
 ggplot(biosope)+
   geom_point(aes(x = lon, y = -depth, colour = peri))
+
+#redefine optical_layer####
+
+merged_argo <- merged_argo %>% mutate(pd = ze/4.6)
+merged_argo <- merged_argo[is.na(merged_argo$pd) == FALSE,]
+for(i in 1:nrow(merged_argo)){
+  if(merged_argo[i,]$depth <= merged_argo[i,]$pd){
+    merged_argo[i,]$optical_layer = 1
+  }
+  if(merged_argo[i,]$depth <= merged_argo[i,]$ze & merged_argo[i,]$depth > merged_argo[i,]$pd){
+    merged_argo[i,]$optical_layer = 2
+  }
+  if(merged_argo[i,]$depth <= 1.5 * merged_argo[i,]$ze & merged_argo[i,]$depth > merged_argo[i,]$ze){
+    merged_argo[i,]$optical_layer = 3
+  }
+}
+

@@ -44,6 +44,8 @@ hplc$depth <- round(hplc$depth)
 hplc$lat <- ifelse(hplc$id == "lovbio075b", - hplc$lat, hplc$lat)
 hplc$lat <- ifelse(hplc$id %in% c("lovbio077b"), - hplc$lat, hplc$lat)
 hplc$lon <- ifelse(hplc$id %in% c("lovbio077b"), - hplc$lon, hplc$lon)
+hplc$lat <- ifelse(hplc$id %in% c("lovbio079b"), - hplc$lat, hplc$lat)
+hplc$lon <- ifelse(hplc$id %in% c("lovbio079b"), - hplc$lon, hplc$lon)
 first_profiles$date[first_profiles$lovbio == "lovbio057b"] <- date("2015-01-20")
 first_profiles$date[first_profiles$lovbio == "lovbio043b"] <- date("2015-01-20")
 

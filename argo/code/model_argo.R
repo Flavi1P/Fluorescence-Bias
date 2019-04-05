@@ -7,11 +7,12 @@ source("functions/phi_lm.R")
 source("functions/phi_stat.R")
 source("functions/phi_boot.R")
 pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
+NAT_IRS_list <- c("lovbio059c", "lovbio045b", "lovbio024c", "lovbio044b", "lovbio031c", "lovbio027b", "lovbio040b", "lovbio026c")
 
 map_vec <- read_csv("Data/map_vec")
 merged_argo <- read_csv("Data/merged_argo")
 merged_argo <- filter(merged_argo, lovbio != "lovbio067c" & lovbio != "lovbio083d" & lovbio != "lovbio085d" & lovbio != "lovbio090d") #filter profile with only 1 match
-
+merged_argo <- filter(merged_argo, !(lovbio %in% NAT_IRS_list))
 
 ggplot(merged_argo)+
   geom_point(aes(x = lon.x, y = lat.x, colour = "hplc"), size = 3)+

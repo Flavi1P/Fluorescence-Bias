@@ -92,7 +92,7 @@ merged_dist$lag <- merged_dist$date.y - merged_dist$new_date
 ggplot(filter(merged_dist, chla_qc < 4))+
   geom_point(aes(x = tchla, y = chla, colour = as.numeric(lag)))
 
-merged_dist_clean <- filter(merged_dist, lag < 100)
+merged_dist_clean <- filter(merged_dist)
 
 lag_by_float <- data.frame("lovbio" = NA, "lag_min" = NA)
 for (i in unique(merged_dist$lovbio)){
@@ -236,10 +236,10 @@ ggplot(merged_mduf)+
 #merge all database####
 
 
-merged_data <- select(merged_dist_clean, new_date, id.x, depth.x, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
+merged_data <- select(merged_dist_clean, date.y, id.x, depth.x, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
 merged_data2 <- select(merged_dist2, date.y, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
 
-merged_data <- rename_(merged_data, "date" = "new_date", "lovbio" = "id.x", "depth" = "depth.x")
+merged_data <- rename_(merged_data, "date" = "date.y", "lovbio" = "id.x", "depth" = "depth.x")
 merged_data2 <- rename_(merged_data2, "date" = "date.y")
 
 merged_soclim <- select(merged_soclim, date, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
@@ -268,7 +268,7 @@ ggplot(merged_full)+
 table(merged_full$profile)
 
 
-momadata <- merged_full %>% filter(lovbio != "lovapm002a" & lovbio != "lovbio067c" & profile != 36) %>% select(depth, tchla, profile, lovbio)
+momadata <- merged_full %>% filter(lovbio != "lovapm002a" & profile != 31) %>% select(depth, tchla, profile, lovbio)
 momadata <- na.omit(momadata)
 
 

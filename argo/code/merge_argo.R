@@ -116,7 +116,7 @@ ggplot(merged_dist_clean)+
 merged_dist_clean <- merged_dist_clean[order(merged_dist_clean$id.x),]
 merged_dist_clean$profile <- profile_numb(merged_dist_clean$depth.x, "downward")
 
-NAT_LAS_list <- c("lovbio014b", "lovbio030b", "lovbio032d", "lovbio028b", "lovbio011b", "lovbio021c", "lovbio012b")
+NAT_LAS_list <- c("lovbio014b", "lovbio030b", "lovbio032b", "lovbio028b", "lovbio011b", "lovbio021c", "lovbio012b")
 NAT_LAS <- filter(merged_dist_clean, lovbio %in% NAT_LAS_list)
 LAS_profiles <- filter(first_profiles, lovbio %in% NAT_LAS$lovbio)
 ggplot(LAS_profiles)+

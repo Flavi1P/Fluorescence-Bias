@@ -9,6 +9,9 @@ output:
     toc_float : TRUE
     toc_depth : 3
     df_print: paged
+    include :
+      before_body : header.html
+      
 ---
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE, setup, include=FALSE}
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())

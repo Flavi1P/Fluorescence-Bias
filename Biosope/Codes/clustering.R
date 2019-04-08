@@ -1,0 +1,104 @@
+library(tidyverse)
+library(zoo)
+library(vegan)
+
+source("functions/profile_numb.R")
+source("functions/zeu_moma.R")
+
+pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
+
+biosope <- read_csv("Data/Final/biomerged")
+biosope$depth <- abs(biosope$depth)
+
+biosope$profile <- profile_numb(biosope$depth, "upward")
+
+table(biosope$profile)
+
+momadata <- filter(biosope, profile %in% which(table(biosope$profile) > 1)) %>%  select(depth, tchla, profile)
+momadata$ze <- NA
+for (i in momadata$profile){
+  dat <- filter(momadata, profile == i)
+  momadata$ze[which(momadata$profile == i)] <- Zeu_moma(dat$tchla, dat$depth)
+}
+
+momadata <- momadata %>% group_by(profile) %>% summarize_all(mean)
+biosope <- left_join(biosope, select(momadata, ze, profile), by ="profile")
+
+
+biosope$ze  = approx(x = momadata$profile, y = momadata$ze, xout = biosope$profile)$y #linear interpolmation of ze depth through profiles to avoid NA
+
+
+biosope$ze <- rollmedian(biosope$ze, 5, fill = c(65.9, NA, 43.9))
+biosope$ze <- rollmean(biosope$ze, 5, fill = c(65.9, NA, 43.9))
+
+
+ggplot(biosope)+
+  geom_point(aes(x = lon, y = -depth))+
+  geom_path(aes(x = lon, y = -ze))
+
+
+biosope <- biosope %>% mutate(wdp = 1.56 * fuco + 0.92 * peri + 4.8 * allo + 1.02 * but + 1.12 * hex + 1.51 * zea + 0.69 * tchlb,
+                              micro = (1.56 * fuco + 0.92 * peri)/wdp,
+                              nano = (4.8 * allo + 1.02 * but + 1.51 * hex)/wdp,
+                              pico = (1.51 * zea + 0.69 * tchlb)/wdp,
+                              amicro = 0.0164 * exp(0.79*(depth/ze)),
+                              anano = 0.0876 * exp(-0.45*(depth/ze)),
+                              apico = 0.1393 * exp(-0.69*(depth/ze)),
+                              microfluo = amicro * micro * tchla,
+                              nanofluo = anano * nano * tchla,
+                              picofluo = apico * pico * tchla,
+                              optical_layer = (depth/ze)/0.50001 + 1,
+                              ratio = fluo_urel / tchla)
+
+ggplot(biosope)+
+  geom_point(aes(x = lon, y = -depth, colour = ratio))+
+  scale_color_viridis_c()
+
+biosope$pigsum <- rowSums(select(biosope, pigments))
+biosope <-  filter(biosope, pigsum > 0 & fluo_urel != "NA" & optical_layer < 4)
+
+AFC <- cca(select(biosope, pigments))
+
+scores <- data.frame(scores(AFC, choices = c(1,2,3), display = "site"))
+biosope <- bind_cols(biosope, scores)
+
+pigscore <- data.frame(scores(AFC, choices = c(1,2,3), display = "species"))
+
+
+
+fitscore <- envfit(AFC, select(biosope, micro, nano, pico, ratio))
+fitarrow <- as.data.frame(fitscore$vectors$arrows)
+
+ggplot(biosope)+
+  geom_point(aes(x = CA1, y = CA2, colour = pico))+
+  geom_segment(aes(x = 0, xend = CA1, y = 0, yend = CA2), data = pigscore)+
+  geom_text(aes(x = CA1, y = CA2, label = rownames(pigscore)), data = pigscore)+
+  geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = fitarrow, colour = "#33a02c")+
+  geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(fitarrow), fontface = 2), data = fitarrow)+
+  scale_color_viridis_c()
+
+distbio <- dist(select(biosope, CA1, CA2))
+biosope$group <- as.factor(cutree(hclust(distbio, method = "ward.D"), k = 4))
+
+ggplot(biosope)+
+  geom_point(aes(x = CA1, y = CA2, colour = group))+
+  geom_segment(aes(x = 0, xend = CA1, y = 0, yend = CA2), data = pigscore)+
+  geom_text(aes(x = CA1, y = CA2, label = rownames(pigscore)), data = pigscore)+
+  geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = fitarrow, colour = "#33a02c")+
+  geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(fitarrow), fontface = 2), data = fitarrow)+
+  scale_color_viridis_d()
+
+resume_clust <- biosope %>% select(group, micro, nano, pico, ratio, tchla, fluo_urel) %>% group_by(group) %>% 
+  summarize_all(c(mean, sd)) %>% ungroup()
+names(resume_clust) <- c("group","micro_mean", "nano_mean", "pico_mean", "ratio_mean", "tchla_mean", "fluo_mean",
+                         "micro_sd", "nano_sd", "pico_sd", "ratio_sd", "tchla_sd", "fluo_sd")
+
+ggplot(resume_clust)+
+  geom_col(aes(x = group, y = ratio_mean))+
+  geom_errorbar(aes(x = group, ymin = ratio_mean - ratio_sd, ymax = ratio_mean + ratio_sd))
+
+tall_cluster <- gather(resume_clust, key = group, "mean")
+tall_cluster$cluster = c(1,2,3,4)
+
+ggplot(filter(tall_cluster, group %in% c("micro_mean", "nano_mean", "pico_mean")))+
+  geom_col(aes(x = cluster, y = mean, fill = group),position = "fill")

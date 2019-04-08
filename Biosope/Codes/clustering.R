@@ -102,3 +102,43 @@ tall_cluster$cluster = c(1,2,3,4)
 
 ggplot(filter(tall_cluster, group %in% c("micro_mean", "nano_mean", "pico_mean")))+
   geom_col(aes(x = cluster, y = mean, fill = group),position = "fill")
+
+AFC_detrend <- decorana(select(biosope, pigments))
+AFC_detrend
+
+plot(AFC_detrend)
+scores_detrend <- data.frame(scores(AFC_detrend, choices = c(1,2,3), display = "site"))
+biosope <- bind_cols(biosope, scores_detrend)
+
+pigscore_detrend <- data.frame(scores(AFC_detrend, choices = c(1,2,3), display = "species"))
+
+ggplot(biosope)+
+  geom_point(aes(x = DCA1, y = DCA2, colour = group))+
+  geom_segment(aes(x = 0, xend = DCA1, y = 0, yend = DCA2), data = pigscore_detrend)+
+  geom_text(aes(x = DCA1, y = DCA2, label = rownames(pigscore_detrend)), data = pigscore_detrend)+
+  scale_color_viridis_d()
+
+distbio_detrend <- dist(select(biosope, DCA1, DCA2))
+biosope$group_detrend <- as.factor(cutree(hclust(distbio_detrend, method = "ward.D"), k = 4))
+
+ggplot(biosope)+
+  geom_point(aes(x = DCA1, y = DCA2, colour = group_detrend))+
+  geom_segment(aes(x = 0, xend = DCA1, y = 0, yend = DCA2), data = pigscore_detrend)+
+  geom_text(aes(x = DCA1, y = DCA2, label = rownames(pigscore_detrend)), data = pigscore_detrend)+
+  scale_color_viridis_d()
+
+resume_clust_detrend <- biosope %>% select(group_detrend, micro, nano, pico, ratio, tchla, fluo_urel) %>% group_by(group_detrend) %>% 
+  summarize_all(c(mean, sd)) %>% ungroup()
+names(resume_clust_detrend) <- c("group","micro_mean", "nano_mean", "pico_mean", "ratio_mean", "tchla_mean", "fluo_mean",
+                         "micro_sd", "nano_sd", "pico_sd", "ratio_sd", "tchla_sd", "fluo_sd")
+
+ggplot(resume_clust_detrend)+
+  geom_col(aes(x = reorder(group, ratio_mean), y = ratio_mean))+
+  geom_errorbar(aes(x = reorder(group, ratio_mean), ymin = ratio_mean - ratio_sd, ymax = ratio_mean + ratio_sd))
+
+tall_cluster <- gather(resume_clust, key = group, "mean")
+tall_cluster$cluster = c(1,2,3)
+
+ggplot(filter(tall_cluster, group %in% c("micro_mean", "nano_mean", "pico_mean")))+
+  geom_col(aes(x = cluster, y = mean, fill = group),position = "fill")
+

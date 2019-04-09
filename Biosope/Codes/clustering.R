@@ -28,8 +28,11 @@ biosope <- left_join(biosope, select(momadata, ze, profile), by ="profile")
 biosope$ze  = approx(x = momadata$profile, y = momadata$ze, xout = biosope$profile)$y #linear interpolmation of ze depth through profiles to avoid NA
 
 
-biosope$ze <- rollmedian(biosope$ze, 5, fill = c(65.9, NA, 43.9))
-biosope$ze <- rollmean(biosope$ze, 5, fill = c(65.9, NA, 43.9))
+biosope$ze <- rollmean(biosope$ze, 20, fill = c(65.9, NA, 43.9))
+biosope$ze <- rollmean(biosope$ze, 20, fill = c(65.9, NA, 43.9))
+biosope$ze <- rollmean(biosope$ze, 20, fill = c(65.9, NA, 43.9))
+biosope$ze <- rollmean(biosope$ze, 20, fill = c(65.9, NA, 43.9))
+
 
 
 ggplot(biosope)+
@@ -130,7 +133,10 @@ ggplot(biosope)+
   ggtitle("Detrend Correspondance analysis on Biosope HPLC data")
 
 
-
+ggplot(biosope)+
+  geom_point(aes(x = lon, y = -depth, colour = group_detrend))+
+  geom_path(aes(x = lon, y = -ze), se = FALSE, colour = "Black")+
+  scale_color_viridis_d()
 
 # 
 # resume_clust_detrend <- biosope %>% select(group_detrend, micro, nano, pico, ratio, tchla, fluo_urel) %>% group_by(group_detrend) %>% 

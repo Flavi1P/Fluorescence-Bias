@@ -1,4 +1,5 @@
 library(tidyverse)
+library(FactoMineR)
 
 pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
 
@@ -37,3 +38,4 @@ ggplot(boussole_ca)+
   ylab("CA2 22%")+
   ggtitle("Correspondance Analysis of boussole pigment (2013:2015)")+
   coord_equal()
+

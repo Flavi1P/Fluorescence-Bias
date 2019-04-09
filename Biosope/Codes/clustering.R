@@ -138,7 +138,7 @@ ggplot(biosope)+
   geom_path(aes(x = lon, y = -ze), se = FALSE, colour = "Black")+
   scale_color_viridis_d()
 
-# 
+#write_csv(biosope, "Biosope/Data/biosope")
 # resume_clust_detrend <- biosope %>% select(group_detrend, micro, nano, pico, ratio, tchla, fluo_urel) %>% group_by(group_detrend) %>% 
 #   summarize_all(c(mean, sd)) %>% ungroup()
 # names(resume_clust_detrend) <- c("group","micro_mean", "nano_mean", "pico_mean", "ratio_mean", "tchla_mean", "fluo_mean",

@@ -82,16 +82,19 @@ for (i in rmse_computed$run){
   biosope_test <- sample_frac(biosope, 0.2)
   
   phi_biosope <- phi_boot(biosope_train, "fluo_urel")
+  coeff_lm <- summary(lm(fluo_urel~tchla, data = biosope_train))$coefficient[2,1]
+  
+  biosope_test$fluo <- biosope_test$fluo_urel*coeff_lm
   
   phi_biosope <- phi_biosope %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)
   names(phi_biosope) <- c("optical_layer", "phi_micro", "phi_nano", "phi_pico") 
   
-  biosope_calibration <- biosope_test %>% select(micro, nano, pico, amicro, anano, apico, tchla, fluo_urel, optical_layer) %>% 
+  biosope_calibration <- biosope_test %>% select(micro, nano, pico, amicro, anano, apico, tchla, fluo_urel, optical_layer, fluo) %>% 
     left_join(phi_biosope, by = "optical_layer") %>% 
     mutate(fluo_calibrate = (fluo_urel/(micro*amicro * phi_micro + nano*anano * phi_nano + pico*apico * phi_pico)))
   
   a <- rmse(biosope_calibration$tchla, biosope_calibration$fluo_calibrate)
-  b <- rmse(biosope_calibration$tchla, biosope_calibration$fluo_urel)
+  b <- rmse(biosope_calibration$tchla, biosope_calibration$fluo)
   rmse_computed$rmse[i] <- a/b
   
 }

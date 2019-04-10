@@ -60,6 +60,16 @@ ggplot(biosope)+
 biosope$pigsum <- rowSums(select(biosope, pigments))
 biosope <-  filter(biosope, pigsum > 0 & fluo_urel != "NA" & optical_layer < 4)
 
+mod <- lm(tchla~fluo_urel + micro + nano + pico, data = biosope)
+cooksd <- cooks.distance(mod)
+
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")
+abline(h = 4*mean(cooksd, na.rm=T), col="red") 
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4*mean(cooksd, na.rm=T),names(cooksd),""), col="red")
+
+influential <- as.numeric(names(cooksd)[(cooksd > 4*mean(cooksd, na.rm=T))]) 
+biosope <- biosope[-influential,]
+
 AFC <- cca(select(biosope, pigments))
 
 scores <- data.frame(scores(AFC, choices = c(1,2,3), display = "site"))
@@ -125,8 +135,8 @@ ggplot(biosope)+
   geom_point(aes(x = DCA1, y = DCA2, colour = group_detrend))+
   geom_segment(aes(x = 0, xend = DCA1, y = 0, yend = DCA2), data = pigscore_detrend)+
   geom_text(aes(x = DCA1, y = DCA2, label = rownames(pigscore_detrend)), data = pigscore_detrend)+
-  geom_segment(aes(x = 0, y = 0, xend = DCA1*1.7, yend = DCA2*1.7), data = fitarrow_detrend, colour = "#33a02c")+
-  geom_text(aes(x = DCA1*1.7, y = DCA2*1.7, label=rownames(fitarrow_detrend), fontface = 2), data = fitarrow_detrend)+
+  geom_segment(aes(x = 0, y = 0, xend = DCA1, yend = DCA2), data = fitarrow_detrend, colour = "#33a02c")+
+  geom_text(aes(x = DCA1, y = DCA2, label=rownames(fitarrow_detrend), fontface = 2), data = fitarrow_detrend)+
   scale_color_viridis_d(name = "cluster")+
   coord_equal()+
   xlab("DCA1 52%")+ylab("DCA2 15%")+

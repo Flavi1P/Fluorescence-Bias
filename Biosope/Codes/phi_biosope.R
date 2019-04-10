@@ -36,3 +36,10 @@ a/b
 ggplot(biosope_calibration)+
   geom_point(aes(x = tchla, y = fluo_calibrate), colour = "Green")+
   geom_point(aes(x = tchla, y = fluo_urel))
+
+biosope_calibration <- biosope_calibration %>% mutate(ratio_model = micro * phi_micro + nano * phi_nano + pico * phi_pico)
+
+ggplot(biosope_calibration)+
+  geom_density(aes(x =ratio_model))
+
+

@@ -1,10 +1,10 @@
-ibrary(tidyverse)
+library(tidyverse)
 library(Metrics)
 library(vegan)
 library(nnls)
 library(FactoMineR)
 source("functions/phi_lm.R")
-source("functions/phi_stat.R")
+source("functions/outliers.R")
 source("functions/phi_boot.R")
 pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
 NAT_IRS_list <- c("lovbio059c", "lovbio045b", "lovbio024c", "lovbio044b", "lovbio031c", "lovbio027b", "lovbio040b", "lovbio026c")
@@ -29,6 +29,10 @@ ggplot(merged_argo)+
 #phi####
 merged_argo$fluo <- merged_argo$chla_adjusted * 2
 merged_argo$ratio <- merged_argo$fluo/merged_argo$tchla
+
+influential <- outliers(select(merged_argo, fluo, tchla, ratio, micro, nano, pico))
+
+merged_argo <- merged_argo[-influential,]
 
 ggplot(merged_argo)+
   geom_density(aes(x = ratio))

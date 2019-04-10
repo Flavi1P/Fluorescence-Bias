@@ -5,9 +5,6 @@ library(vegan)
 source("functions/phi_lm.R")
 source("functions/phi_boot.R")
 
-source("functions/profile_numb.R")
-source("functions/zeu_moma.R")
-
 pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
 
 biosope <- read_csv("Biosope/Data/biosope")
@@ -15,6 +12,7 @@ biosope$optical_layer <- round(biosope$optical_layer)
 
 biosope <- filter(biosope, optical_layer < 4)
 phi_biosope <- phi_lm(biosope, "fluo_urel")
+phi_biosope-tchla <- phi_lm(biosope, "tchla")
 
 ggplot(phi_biosope, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   geom_bar(position=position_dodge(), stat="identity") +

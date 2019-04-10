@@ -12,7 +12,10 @@ biosope$optical_layer <- round(biosope$optical_layer)
 
 biosope <- filter(biosope, optical_layer < 4)
 phi_biosope <- phi_lm(biosope, "fluo_urel")
-phi_biosope-tchla <- phi_lm(biosope, "tchla")
+phi_biosope_tchla <- phi_lm(biosope, "tchla")
+
+yield_ratio <- phi_biosope$phi/phi_biosope_tchla$phi
+phi_biosope$yield_ratio <- yield_ratio
 
 ggplot(phi_biosope, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   geom_bar(position=position_dodge(), stat="identity") +
@@ -20,6 +23,12 @@ ggplot(phi_biosope, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   scale_fill_viridis_d( name = "optical layer")+
   ylab("Phi")+ xlab("size classe")+
   ggtitle("Fluorescent yield, Biosope")
+
+ggplot(phi_biosope, aes(x=size, y = yield_ratio, fill = as.factor(optical_layer))) +
+  geom_bar(position=position_dodge(), stat="identity") +
+  scale_fill_viridis_d( name = "optical layer")+
+  ylab("Ratio")+ xlab("size classe")+
+  ggtitle("Fluorescent yield ratio, Biosope")
 
 phi_biosope <- phi_biosope %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)
 names(phi_biosope) <- c("optical_layer", "phi_micro", "phi_nano", "phi_pico") 
@@ -33,13 +42,10 @@ b <- rmse(biosope_calibration$tchla, biosope_calibration$fluo_urel)
 a/b
 
 ggplot(biosope_calibration)+
-  geom_point(aes(x = tchla, y = fluo_calibrate), colour = "Green")+
-  geom_point(aes(x = tchla, y = fluo_urel))
+  geom_point(aes(x = tchla, y = fluo_calibrate), colour = "Red")+
+  geom_point(aes(x = tchla, y = fluo_urel, colour = micro))+
+  scale_color_viridis_c()
 
-biosope_calibration <- biosope_calibration %>% mutate(ratio_model = micro * phi_micro + nano * phi_nano + pico * phi_pico)
-
-ggplot(biosope_calibration)+
-  geom_density(aes(x =ratio_model))
 
 #test is on sampled dataset####
 

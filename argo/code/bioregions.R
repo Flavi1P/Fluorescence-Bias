@@ -5,6 +5,7 @@ library(vegan)
 library(ggrepel)
 library(gridExtra)
 library(grid)
+library(nnls)
 path = "Data/Longhurst"
 argo <- read_csv("Data/merged_argo")
 map_vec <- read_csv("Data/map_vec")
@@ -79,7 +80,7 @@ g1
 
 
 #AFC####
-afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.y, lat.y, phi_glob))
+afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.y, lat.y))
 afc_table <- filter(afc_table, code != "ANTA")
 
 afc_argo <- cca(na.omit(select(afc_table, pigments)))
@@ -127,67 +128,67 @@ print(g1, vp = define_region(1,1))
 print(g2, vp = define_region(1:2, 2))
 print(g3, vp = define_region(2,1))
 
-####
-
-source("functions/phi_boot.R")
-
-phi_argo <- phi_boot(argo, variable = "fluo")
-phi_argo$se <- ifelse(phi_argo$se > phi_argo$phi, phi_argo$phi, phi_argo$se)
-
-ggplot(phi_argo, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
-  geom_bar(position=position_dodge(), stat="identity") +
-  geom_errorbar(aes(ymin = phi-se, ymax = phi+se),position=position_dodge())+
-  scale_fill_viridis_d( name = "optical layer")+
-  ylab("Phi")+ xlab("size classe")
-
-
-phi_argo <- phi_argo %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)
-names(phi_argo) <- c("optical_layer", "phi_micro", "phi_nano", "phi_pico") 
-
-
-argo <- left_join(argo, phi_argo)
-argo <- argo %>% mutate(phi_glob = micro * phi_micro + nano * phi_nano + pico * phi_pico)
-
-
-phi_glob_argo <- argo  %>% group_by(code) %>% summarise_at(vars(phi_glob), c(mean, sd), na.rm = TRUE) %>% ungroup()
-names(phi_glob_argo) <- c("code", "mean", "sd")
-
-g4 <- ggplot(phi_glob_argo)+
-  geom_col(aes(x = reorder(code, mean), y = mean, fill = code))+
-  geom_errorbar(aes(x = code, ymin = mean - sd, ymax = mean + sd))+
-  xlab("code of longhurst oceanic bioregion")+
-  geom_errorbar(aes(code, ymax = 2, ymin = 2),
-                size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
-  geom_errorbar(aes(code, ymax = 1, ymin = 1),
-                size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
-  theme(axis.text.x = element_text(angle = 45))+
-  guides(fill = FALSE)+
-  scale_fill_brewer(palette = "Set1")
-
-grid.arrange(g1, g4, ncol = 1)
-
-afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.y, lat.y, phi_glob))
-afc_table <- filter(afc_table, code != "ANTA")
-
-afc_argo <- cca(na.omit(select(afc_table, pigments)))
-test <- envfit(afc_argo, select(afc_table, micro, nano, pico, ratio, phi_glob))
-
-env_arrow <- as.data.frame(test$vectors$arrows) #On récupère les donnes du modele sur les variables environnementales
-
-argo_score <- as.data.frame(scores(afc_argo, choices = c(1,2,3,4,5), display = c("site"))) #this is a dataframe with the score on the 5 axes of each sample
-
-afc_table <- bind_cols(afc_table, argo_score)
-
-pig_score <- as.data.frame(scores(afc_argo, choices = c(1,2,3,4,5), display = c("species")))
-
-
-ggplot()+
-  geom_point(aes(x = CA1, y = CA2, colour = code), size = 2, data = afc_table)+
-  geom_segment(aes(x = 0, xend = CA1 *1.5, y = 0, yend = CA2*1.5), data = pig_score)+
-  geom_text_repel(aes(x = CA1*1.5, y = CA2*1.5, label = rownames(pig_score)), data = pig_score)+
-  geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = env_arrow, colour = "#33a02c")+
-  geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(env_arrow), fontface = 2), data = env_arrow)+
-  scale_color_brewer(palette = "Set1") + coord_equal() +
-  guides(colour = FALSE)
-
-summary(lm(ratio~phi_glob, data = argo))
+#### phi global part (optional), phi global = fluorescent yield of the community
+# 
+# source("functions/phi_boot.R")
+# 
+# phi_argo <- phi_boot(argo, variable = "fluo")
+# phi_argo$se <- ifelse(phi_argo$se > phi_argo$phi, phi_argo$phi, phi_argo$se)
+# 
+# ggplot(phi_argo, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
+#   geom_bar(position=position_dodge(), stat="identity") +
+#   geom_errorbar(aes(ymin = phi-se, ymax = phi+se),position=position_dodge())+
+#   scale_fill_viridis_d( name = "optical layer")+
+#   ylab("Phi")+ xlab("size classe")
+# 
+# 
+# phi_argo <- phi_argo %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)
+# names(phi_argo) <- c("optical_layer", "phi_micro", "phi_nano", "phi_pico") 
+# 
+# 
+# argo <- left_join(argo, phi_argo)
+# argo <- argo %>% mutate(phi_glob = micro * phi_micro + nano * phi_nano + pico * phi_pico)
+# 
+# 
+# phi_glob_argo <- argo  %>% group_by(code) %>% summarise_at(vars(phi_glob), c(mean, sd), na.rm = TRUE) %>% ungroup()
+# names(phi_glob_argo) <- c("code", "mean", "sd")
+# 
+# g4 <- ggplot(phi_glob_argo)+
+#   geom_col(aes(x = reorder(code, mean), y = mean, fill = code))+
+#   geom_errorbar(aes(x = code, ymin = mean - sd, ymax = mean + sd))+
+#   xlab("code of longhurst oceanic bioregion")+
+#   geom_errorbar(aes(code, ymax = 2, ymin = 2),
+#                 size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
+#   geom_errorbar(aes(code, ymax = 1, ymin = 1),
+#                 size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
+#   theme(axis.text.x = element_text(angle = 45))+
+#   guides(fill = FALSE)+
+#   scale_fill_brewer(palette = "Set1")
+# 
+# grid.arrange(g1, g4, ncol = 1)
+# 
+# afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.y, lat.y, phi_glob))
+# afc_table <- filter(afc_table, code != "ANTA")
+# 
+# afc_argo <- cca(na.omit(select(afc_table, pigments)))
+# test <- envfit(afc_argo, select(afc_table, micro, nano, pico, ratio, phi_glob))
+# 
+# env_arrow <- as.data.frame(test$vectors$arrows) #On récupère les donnes du modele sur les variables environnementales
+# 
+# argo_score <- as.data.frame(scores(afc_argo, choices = c(1,2,3,4,5), display = c("site"))) #this is a dataframe with the score on the 5 axes of each sample
+# 
+# afc_table <- bind_cols(afc_table, argo_score)
+# 
+# pig_score <- as.data.frame(scores(afc_argo, choices = c(1,2,3,4,5), display = c("species")))
+# 
+# 
+# ggplot()+
+#   geom_point(aes(x = CA1, y = CA2, colour = code), size = 2, data = afc_table)+
+#   geom_segment(aes(x = 0, xend = CA1 *1.5, y = 0, yend = CA2*1.5), data = pig_score)+
+#   geom_text_repel(aes(x = CA1*1.5, y = CA2*1.5, label = rownames(pig_score)), data = pig_score)+
+#   geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = env_arrow, colour = "#33a02c")+
+#   geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(env_arrow), fontface = 2), data = env_arrow)+
+#   scale_color_brewer(palette = "Set1") + coord_equal() +
+#   guides(colour = FALSE)
+# 
+# summary(lm(ratio~phi_glob, data = argo))

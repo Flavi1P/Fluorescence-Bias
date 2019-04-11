@@ -41,11 +41,23 @@ merged_argo <- filter(merged_argo, optical_layer < 4)
 phi_argo <- phi_boot(merged_argo, variable = "fluo")
 phi_argo$se <- ifelse(phi_argo$se > phi_argo$phi, phi_argo$phi, phi_argo$se)
 
+phi_argo_tchla <- phi_boot(merged_argo, variable = "tchla")
+
+yield_ratio <- phi_argo$phi/phi_argo_tchla$phi
+
+phi_argo$yield_ratio <- yield_ratio
+
 ggplot(phi_argo, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   geom_bar(position=position_dodge(), stat="identity") +
   geom_errorbar(aes(ymin = phi-se, ymax = phi+se),position=position_dodge())+
   scale_fill_viridis_d( name = "optical layer")+
   ylab("Phi")+ xlab("size classe")
+
+ggplot(phi_argo, aes(x=size, y = yield_ratio, fill = as.factor(optical_layer))) +
+  geom_bar(position=position_dodge(), stat="identity") +
+  scale_fill_viridis_d( name = "optical layer")+
+  ylab("Yield ratio")+ xlab("size classe")+
+  ggtitle("Fluorescent yield ratio, argo")
 
 
 phi_argo <- phi_argo %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)

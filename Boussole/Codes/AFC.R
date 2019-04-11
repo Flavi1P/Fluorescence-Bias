@@ -8,13 +8,7 @@ boussole <- read_csv("Boussole/Data/boussole.csv")
 boussole_ca <- boussole %>% mutate(pigsum = rowSums(select(boussole, pigments))) %>% filter(pigsum > 0 & ratio < 10) %>% select(pigments, ratio, micro, nano, pico)
 boussole_ca <- na.omit(boussole_ca)
 
-boussole_ca <- boussole_ca %>% mutate(fuco = 1.4 * fuco,
-                                     peri = 1.4 * peri,
-                                     allo = 0.6 * allo,
-                                     but = 0.35 * but,
-                                     hex = 1.27 * hex,
-                                     zea = 0.86 * zea,
-                                     tchlb = 1.01 * tchlb)
+
 AFC <- cca(select(boussole_ca, pigments))
 
 scores <- data.frame(scores(AFC, choices = c(1,2,3), display = "site"))
@@ -22,7 +16,6 @@ boussole_ca <- bind_cols(boussole_ca, scores)
 
 pigscore <- data.frame(scores(AFC, choices = c(1,2,3), display = "species"))
 
-boussole_ca <- filter(boussole_ca, CA2 > -5)
 
 fitscore <- envfit(AFC, select(boussole_ca, micro, nano, pico, ratio))
 fitarrow <- as.data.frame(fitscore$vectors$arrows)
@@ -39,3 +32,6 @@ ggplot(boussole_ca)+
   ggtitle("Correspondance Analysis of boussole pigment (2013:2015)")+
   coord_equal()
 
+boussole$optical_layer <- round(boussole$optical_layer)
+boussole <- filter(boussole, optical_layer < 4)
+summary(lm(ratio~(fuco + peri + allo + but + hex + zea+ tchlb)*press, data = boussole))

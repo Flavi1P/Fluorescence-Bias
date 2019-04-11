@@ -128,6 +128,36 @@ print(g1, vp = define_region(1,1))
 print(g2, vp = define_region(1:2, 2))
 print(g3, vp = define_region(2,1))
 
+#DCA####
+
+AFC_detrend <- decorana(select(afc_table, pigments))
+AFC_detrend
+
+scores_detrend <- data.frame(scores(AFC_detrend, choices = c(1,2,3), display = "site"))
+afc_table <- bind_cols(afc_table, scores_detrend)
+
+pigscore_detrend <- data.frame(scores(AFC_detrend, choices = c(1,2,3), display = "species"))
+
+fitscore_detrend <- envfit(AFC_detrend, select(afc_table, micro, nano, pico, ratio))
+fitarrow_detrend <- as.data.frame(fitscore_detrend$vectors$arrows)
+
+
+
+ggplot(afc_table)+
+  geom_point(aes(x = DCA1, y = DCA2, colour = code))+
+  geom_segment(aes(x = 0, xend = DCA1, y = 0, yend = DCA2), data = pigscore_detrend)+
+  geom_text(aes(x = DCA1, y = DCA2, label = rownames(pigscore_detrend)), data = pigscore_detrend)+
+  geom_segment(aes(x = 0, y = 0, xend = DCA1, yend = DCA2), data = fitarrow_detrend, colour = "#33a02c")+
+  geom_text(aes(x = DCA1, y = DCA2, label=rownames(fitarrow_detrend), fontface = 2), data = fitarrow_detrend)+
+  scale_color_brewer(name = "region", palette = "Set1")+
+  coord_equal()+
+  xlab("DCA1 47%")+ylab("DCA2 7%")+
+  ggtitle("Detrend Correspondance analysis on Argo HPLC data")
+
+fit1 <- lm(ratio~microfluo + nanofluo + picofluo, data =argo)
+plot(fit1)
+summary(fit1)
+
 #### phi global part (optional), phi global = fluorescent yield of the community
 # 
 # source("functions/phi_boot.R")

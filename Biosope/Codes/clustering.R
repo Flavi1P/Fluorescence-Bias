@@ -148,6 +148,8 @@ ggplot(biosope)+
   geom_path(aes(x = lon, y = -ze), se = FALSE, colour = "Black")+
   scale_color_viridis_d()
 
+summary(lm(ratio~(microfluo+nanofluo+picofluo) * optical_layer, data = biosope))
+
 #write_csv(biosope, "Biosope/Data/biosope")
 # resume_clust_detrend <- biosope %>% select(group_detrend, micro, nano, pico, ratio, tchla, fluo_urel) %>% group_by(group_detrend) %>% 
 #   summarize_all(c(mean, sd)) %>% ungroup()

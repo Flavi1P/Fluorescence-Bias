@@ -57,6 +57,8 @@ ggplot(phi_argo, aes(x=size, y = yield_ratio, fill = as.factor(optical_layer))) 
   geom_bar(position=position_dodge(), stat="identity") +
   scale_fill_viridis_d( name = "optical layer")+
   ylab("Yield ratio")+ xlab("size classe")+
+  geom_errorbar(aes(size, ymax = 1, ymin = 1),
+                size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
   ggtitle("Fluorescent yield ratio, argo")
 
 

@@ -18,11 +18,11 @@ argo <- filter(argo, lovbio != "lovbio067c" & lovbio != "lovbio083d" & lovbio !=
 argo <- filter(argo, !(lovbio %in% NAT_IRS_list)) #filter dubious hplc in arctique
 
 
-#longhurst_sf <- read_sf(dsn = path.expand(path), quiet = TRUE)
+longhurst_sf <- read_sf(dsn = path.expand(path), quiet = TRUE)
 
 names(longhurst_sf) <- c("code", "region", "geometry")
 
-longhurst_sf %>% ggplot() + geom_sf(aes(fill = code))
+#longhurst_sf %>% ggplot() + geom_sf(aes(fill = code))
 
 pnts_sf <- do.call("st_sfc",c(lapply(1:nrow(argo),
                                      function(i) {st_point(as.numeric(argo[i,c("lon.y", "lat.y") ]))}), list("crs" = 4326))) 
@@ -143,7 +143,7 @@ fitarrow_detrend <- as.data.frame(fitscore_detrend$vectors$arrows)
 
 
 
-ggplot(afc_table)+
+g2 <- ggplot(afc_table)+
   geom_point(aes(x = DCA1, y = DCA2, colour = code))+
   geom_segment(aes(x = 0, xend = DCA1, y = 0, yend = DCA2), data = pigscore_detrend)+
   geom_text(aes(x = DCA1, y = DCA2, label = rownames(pigscore_detrend)), data = pigscore_detrend)+

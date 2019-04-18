@@ -40,6 +40,10 @@ ggplot(argo)+
 
 argo <- filter(argo, optical_layer < 4)
 
+influential <- outliers(select(argo, fluo, tchla, micro, nano, pico))
+
+argo <- argo[-influential,]
+
 nbr_match_region<- count(argo, "code")
 nbr_float_region <- argo %>% filter(duplicated(lovbio) == FALSE) %>% count("code")
 resume_region <- bind_cols(nbr_float_region, nbr_match_region) %>% select(1,2,4)
@@ -49,6 +53,8 @@ names(resume_region) <- c("code", "nbr_of_float", "nbr_of_match")
 
 argo <- argo %>% mutate(fluo = chla_adjusted * 2,
                         ratio = fluo/tchla)
+
+phi_multiple <- argo %>% group_by(code) %>% phi_simple("fluo")
 
 region_argo <- argo  %>% group_by(code) %>% summarise_at(vars(ratio), c(mean, sd), na.rm = TRUE) %>% ungroup()
 names(region_argo) <- c("code", "mean", "sd")

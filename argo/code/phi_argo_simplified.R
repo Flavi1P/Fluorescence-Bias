@@ -6,6 +6,8 @@ library(FactoMineR)
 source("functions/phi_lm.R")
 source("functions/outliers.R")
 source("functions/phi_simple.R")
+source("functions/normalize.R")
+
 pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
 NAT_IRS_list <- c("lovbio059c", "lovbio045b", "lovbio024c", "lovbio044b", "lovbio031c", "lovbio027b", "lovbio040b", "lovbio026c")
 
@@ -49,7 +51,8 @@ ggplot(phi_argo, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   ylab("Phi")+ xlab("size classe")
 
 
-phi_argo <- phi_argo %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)
+
+  phi_argo <- phi_argo %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)
 names(phi_argo) <- c("optical_layer", "phi_micro", "phi_nano", "phi_pico") 
 
 

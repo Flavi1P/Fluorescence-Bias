@@ -35,3 +35,9 @@ ggplot(dataset)+
   scale_fill_brewer(palette = "Set1")+
   ylim(0,1)+ylab("fraction")+
   theme_bw()
+
+ggplot(dataset)+
+  geom_boxplot(aes(x = campagne, y = ratio))+
+  ylim(0,15)
+
+

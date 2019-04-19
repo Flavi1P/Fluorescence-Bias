@@ -16,17 +16,6 @@ merged_argo <- read_csv("Data/merged_argo")
 merged_argo <- filter(merged_argo, lovbio != "lovbio067c" & lovbio != "lovbio083d" & lovbio != "lovbio085d" & lovbio != "lovbio090d") #filter profile with only 1 match
 merged_argo <- filter(merged_argo, !(lovbio %in% NAT_IRS_list))
 
-ggplot(merged_argo)+
-  geom_point(aes(x = lon.x, y = lat.x, colour = "hplc"), size = 3)+
-  geom_point(aes(x = lon.y, y = lat.y, colour = "argo"))+
-  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
-  coord_quickmap()
-
-ggplot(merged_argo)+
-  geom_point(aes(x = lon.y, y = lat.y, colour = ze))+
-  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
-  coord_quickmap()+
-  scale_color_viridis_c()
 
 #phi####
 merged_argo$fluo <- merged_argo$chla_adjusted * 2
@@ -48,7 +37,7 @@ ggplot(phi_argo, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   geom_bar(position=position_dodge(), stat="identity") +
   geom_errorbar(aes(ymin = phi-se, ymax = phi+se),position=position_dodge())+
   scale_fill_viridis_d( name = "optical layer")+
-  ylab("Phi")+ xlab("size classe")
+  ylab("Phi")+ xlab("size classe") 
 
 
 

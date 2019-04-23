@@ -20,10 +20,11 @@ boussole <- read_csv("Boussole/Data/boussole.csv") %>%
          ratio = fluo/tchla)
 
 
-dataset <- bind_rows(argo, biosope, boussole) %>% 
+dataset_tall <- bind_rows(argo, biosope, boussole) %>% 
   select(micro, nano, pico, campagne, ratio) %>% 
   group_by(campagne) %>% 
-  gather(key = "size_class", value = "frequence", 1:3)
+  gather(key = "size_class", value = "frequence", 1:3) %>% 
+  ungroup()
 
 ggplot(dataset)+
   geom_violin(aes(x = campagne, y = frequence, fill = frequence))+
@@ -38,6 +39,9 @@ ggplot(dataset)+
 
 ggplot(dataset)+
   geom_boxplot(aes(x = campagne, y = ratio))+
-  ylim(0,15)
+  ylim(0,15)+
+  theme_bw()
+
+
 
 

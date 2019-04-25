@@ -30,16 +30,19 @@ ggplot(merged_argo)+
 merged_argo <- filter(merged_argo, optical_layer < 4)
 
 phi_argo <- phi_simple(merged_argo, variable = "fluo")
+phi_argo$phi <- ifelse(phi_argo$size == "pico", 0, phi_argo$phi)
 phi_argo$se <- ifelse(phi_argo$se > phi_argo$phi, phi_argo$phi, phi_argo$se)
+
 
 
 ggplot(phi_argo, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   geom_bar(position=position_dodge(), stat="identity") +
   geom_errorbar(aes(ymin = phi-se, ymax = phi+se),position=position_dodge())+
   scale_fill_viridis_d( name = "optical layer")+
-  ylab("Phi")+ xlab("size classe") 
+  ylab("Phi")+ xlab("size classe") +
+  theme_bw(base_size = 14)
 
-
+#ggsave("argo/Plots/phi_argo.png")
 
   phi_argo <- phi_argo %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)
 names(phi_argo) <- c("optical_layer", "phi_micro", "phi_nano", "phi_pico") 
@@ -50,11 +53,11 @@ argo_calibration <- left_join(merged_argo, phi_argo)
 argo_calibration <- argo_calibration %>% mutate(predict_fluo = tchla*(micro*amicro * phi_micro + nano*anano * phi_nano + pico*apico * phi_pico),
                                                 calibrate_fluo = (fluo/(micro* phi_micro + nano * phi_nano + pico * phi_pico))) 
 
-ggplot(filter(argo_calibration, optical_layer < 4))+
+ggplot(argo_calibration)+
   geom_point(aes(x = tchla , y = calibrate_fluo, colour = "calibrate"))+
   geom_point(aes(x = tchla , y = chla_adjusted, colour = "fluo"))+
-  geom_line(aes(x = tchla, y = tchla))
-
+  geom_line(aes(x = tchla, y = tchla))+
+  scale_colour_brewer(palette = "Set1")
 argo_calibration <- filter(argo_calibration, is.na(calibrate_fluo) == FALSE)
 a <- rmse(argo_calibration$tchla, argo_calibration$calibrate_fluo)
 b <- rmse(argo_calibration$tchla, argo_calibration$chla_adjusted)

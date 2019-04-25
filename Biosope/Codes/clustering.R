@@ -94,7 +94,7 @@ distbio <- dist(select(biosope, CA1, CA2))
 biosope$group <- as.factor(cutree(hclust(distbio, method = "ward.D"), k = 4))
 
 ggplot(biosope)+
-  geom_point(aes(x = CA1, y = CA2, colour = group))+
+  geom_point(aes(x = CA1, y = CA2, colour = group), size = 1.5)+
   geom_segment(aes(x = 0, xend = CA1, y = 0, yend = CA2), data = pigscore)+
   geom_text(aes(x = CA1, y = CA2, label = rownames(pigscore)), data = pigscore)+
   geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = fitarrow, colour = "#33a02c")+
@@ -103,6 +103,8 @@ ggplot(biosope)+
   theme_bw(base_size = 14)+
   coord_equal()+
   scale_color_viridis_d()
+
+ggsave("Biosope/Plots/afc_biosope.png", scale = 1)
 
 resume_clust <- biosope %>% select(group, micro, nano, pico, ratio, tchla, fluo_urel) %>% group_by(group) %>% 
   summarize_all(c(mean, sd)) %>% ungroup()

@@ -19,8 +19,10 @@ ggplot(phi_biosope, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   geom_errorbar(aes(ymin = phi-se, ymax = phi+se),position=position_dodge())+
   scale_fill_viridis_d( name = "optical layer")+
   ylab("Phi")+ xlab("size classe")+
-  ggtitle("Fluorescent yield, Biosope")
+  #ggtitle("Fluorescent yield, Biosope")+
+  theme_bw(base_size = 14)
 
+ggsave("Biosope/Plots/phi_biosope.png")
 
 phi_biosope <- phi_biosope %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)
 names(phi_biosope) <- c("optical_layer", "phi_micro", "phi_nano", "phi_pico") 

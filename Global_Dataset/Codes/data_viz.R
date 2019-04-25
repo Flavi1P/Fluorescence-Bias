@@ -55,10 +55,11 @@ dataset <- bind_cols(dataset,scores)
 pigscore <- data.frame(afc$col$coord)
 
 ggplot()+
-  geom_point(aes(x = Dim.1, y = Dim.2, colour = campagne), data = dataset)+
+  geom_point(aes(x = Dim.1, y = Dim.2, colour = campagne), size = 0.9, alpha = 0.8, data = dataset)+
   geom_segment(aes(x = 0, xend = Dim.1, y = 0, yend = Dim.2), data = pigscore)+
-  geom_text(aes(x = Dim.1, y = Dim.2, label = rownames(pigscore)), data = pigscore)+
+  geom_text(aes(x = Dim.1, y = Dim.2, label = rownames(pigscore)), data = pigscore, size = 5)+
   scale_color_brewer(palette = "Set1")+
+  ylab("CA2 (23%)") + xlab("CA1 (43%)")+
   theme_bw()
 
 biosope <- filter(dataset, campagne == "biosope") %>% 

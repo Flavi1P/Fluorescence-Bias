@@ -99,6 +99,9 @@ ggplot(biosope)+
   geom_text(aes(x = CA1, y = CA2, label = rownames(pigscore)), data = pigscore)+
   geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = fitarrow, colour = "#33a02c")+
   geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(fitarrow), fontface = 2), data = fitarrow)+
+  xlab("CA1 (63%)")+ ylab("CA2 (22%)")+
+  theme_bw(base_size = 14)+
+  coord_equal()+
   scale_color_viridis_d()
 
 resume_clust <- biosope %>% select(group, micro, nano, pico, ratio, tchla, fluo_urel) %>% group_by(group) %>% 

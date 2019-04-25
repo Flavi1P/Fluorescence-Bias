@@ -73,15 +73,16 @@ region_argo <- filter(region_argo, code != "ANTA")#delete this region because we
 g1 <- ggplot(region_argo)+
   geom_col(aes(x = reorder(code, mean), y = mean, fill = code))+
   geom_errorbar(aes(x = code, ymin = mean - sd, ymax = mean + sd))+
-  xlab("code of longhurst oceanic bioregion")+
+  xlab("province océanique de longhurst")+
+  ylab("moyene du ratio chl_fluo/chla")+
   geom_errorbar(aes(code, ymax = 2, ymin = 2),
                 size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
   geom_errorbar(aes(code, ymax = 1, ymin = 1),
                 size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
-  theme(axis.text.x = element_text(angle = 45))+
   geom_text(aes(x = code, y = mean + sd + 0.5, label = nbr_of_float))+
   guides(fill = FALSE)+
-  scale_fill_brewer(palette = "Set1")
+  scale_fill_brewer(palette = "Set1")+
+  theme_bw(base_size = 14)
 g1  
 
 
@@ -119,7 +120,7 @@ g3 <- ggplot(afc_table)+
   xlab("lon")+ylab("lat")+
   coord_quickmap()+
   scale_color_brewer(palette = "Set1")+
-  theme_bw()
+  theme_bw(base_size = 14)
 
 g3
 
@@ -133,6 +134,10 @@ define_region <- function(row, col){
 print(g1, vp = define_region(1,1))
 print(g2, vp = define_region(1:2, 2))
 print(g3, vp = define_region(2,1))
+
+png(file = "argo/Plots/barplot_map.png", width = 8.25, height = 7.73, units = "in", res = 100)
+grid.arrange(g3,g1)
+dev.off()
 
 #DCA####
 
@@ -149,16 +154,18 @@ fitarrow_detrend <- as.data.frame(fitscore_detrend$vectors$arrows)
 
 
 
-g2 <- ggplot(afc_table)+
-  geom_point(aes(x = DCA1, y = DCA2, colour = code))+
-  geom_segment(aes(x = 0, xend = DCA1, y = 0, yend = DCA2), data = pigscore_detrend)+
-  geom_text(aes(x = DCA1, y = DCA2, label = rownames(pigscore_detrend)), data = pigscore_detrend)+
-  geom_segment(aes(x = 0, y = 0, xend = DCA1, yend = DCA2), data = fitarrow_detrend, colour = "#33a02c")+
+ggplot(afc_table)+
+  geom_point(aes(x = DCA1, y = DCA2, colour = code), size = 1.5)+
+  geom_segment(aes(x = 0, xend = DCA1 * 3/4, y = 0, yend = DCA2 *3/4), data = pigscore_detrend)+
+  geom_text(aes(x = DCA1 * 3/4, y = DCA2 * 3/4, label = rownames(pigscore_detrend)), data = pigscore_detrend)+
+  geom_segment(aes(x = 0, y = 0, xend = DCA1, yend = DCA2), data = fitarrow_detrend, colour = "#33a02c", size = 1)+
   geom_text(aes(x = DCA1, y = DCA2, label=rownames(fitarrow_detrend), fontface = 2), data = fitarrow_detrend)+
   scale_color_brewer(name = "region", palette = "Set1")+
   coord_equal()+
   xlab("DCA1 47%")+ylab("DCA2 7%")+
-  ggtitle("Detrend Correspondance analysis on Argo HPLC data")
+#  ggtitle("Detrend Correspondance analysis on Argo HPLC data")+
+  theme_bw(base_size = 14)
+ggsave("argo/Plots/DCA.png", scale = 2)
 
 fit1 <- lm(ratio~microfluo + nanofluo + picofluo, data =argo)
 plot(fit1)

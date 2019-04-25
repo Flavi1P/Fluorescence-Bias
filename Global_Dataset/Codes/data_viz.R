@@ -30,14 +30,18 @@ dataset_tall <- bind_rows(argo, biosope, boussole) %>%
 ggplot(dataset_tall)+
   geom_boxplot(aes(x = size_class, y = frequence, fill = campagne))+
   scale_fill_brewer(palette = "Set1")+
-  ylim(0,1)+ylab("fraction")+
-  theme_bw()
+  ylim(0,1)+ylab("proportion de la classe de taille")+ xlab("classe de taille")+
+  theme_bw(base_size = 14)
+
+ggsave("Global_Dataset/Plots/size_class_boxplot.png", scale = 2)
 
 ggplot(dataset_tall)+
-  geom_boxplot(aes(x = campagne, y = ratio))+
+  geom_violin(aes(x = campagne, y = ratio, fill = campagne))+
+  scale_fill_brewer(palette = "Set1")+
+  guides(fill = FALSE)+
   ylim(0,15)+
-  theme_bw()
-
+  theme_bw(base_size = 14)
+ggsave("Global_Dataset/Plots/ratio_violin.png", scale = 2)
 
 dataset <- bind_rows(argo, biosope, boussole) %>%
   mutate(pigsum = rowSums(.[, 1:7])) %>%
@@ -60,8 +64,11 @@ ggplot()+
   geom_text(aes(x = Dim.1, y = Dim.2, label = rownames(pigscore)), data = pigscore, size = 5)+
   scale_color_brewer(palette = "Set1")+
   ylab("CA2 (23%)") + xlab("CA1 (43%)")+
-  theme_bw()
+  coord_equal()+
+  theme_bw(base_size = 14)
 
+
+ggsave("Global_Dataset/Plots/CA_comp.png", scale = 2)
 biosope <- filter(dataset, campagne == "biosope") %>% 
   mutate(coord = paste(round(Dim.1,1), round(Dim.2,1), sep = ";"),
          dup = duplicated(coord)) %>% 

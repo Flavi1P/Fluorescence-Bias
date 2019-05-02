@@ -136,6 +136,7 @@ fitarrow_detrend <- as.data.frame(fitscore_detrend$vectors$arrows)
 distbio_detrend <- dist(select(biosope, DCA1, DCA2))
 biosope$group_detrend <- as.factor(cutree(hclust(distbio_detrend, method = "ward.D"), k = 4))
 
+plot(hclust(distbio_detrend, method = "ward.D"))
 ggplot(biosope)+
   geom_point(aes(x = DCA1, y = DCA2, colour = group_detrend))+
   geom_segment(aes(x = 0, xend = DCA1, y = 0, yend = DCA2), data = pigscore_detrend)+
@@ -147,11 +148,28 @@ ggplot(biosope)+
   xlab("DCA1 52%")+ylab("DCA2 15%")+
   ggtitle("Detrend Correspondance analysis on Biosope HPLC data")
 
+library(ggsci)
+ggplot(biosope)+
+  geom_point(aes(x = lon, y = -depth, colour = group_detrend), size = 4)+
+  geom_path(aes(x = lon, y = -ze), colour = "Black")+
+  ylab("Profondeur")+
+  scale_color_futurama(name = "Environnement", labels = c("Profond", "Upwelling", "DCM", "Surface"))+
+  xlab("longitude")+
+  theme_bw(base_size = 20)
+
+ggsave("Biosope/Plots/transect.png", scale = 2)
+
+world_data <- map_data("world") %>% fortify()
+
 
 ggplot(biosope)+
-  geom_point(aes(x = lon, y = -depth, colour = group_detrend))+
-  geom_path(aes(x = lon, y = -ze), se = FALSE, colour = "Black")+
-  scale_color_viridis_d()
+  geom_point(aes(x = lon, y = lat))+
+  geom_polygon(aes(x = long, y = lat, group = group), data = world_data)+
+  coord_quickmap(xlim = c(-160, -50), ylim = c(-60, 0))+
+  xlab("longitude")+ylab("latitude")+
+  theme_bw(base_size = 20)
+
+ggsave("Biosope/Plots/cruise_map.png")
 
 summary(lm(ratio~(microfluo+nanofluo+picofluo) * optical_layer, data = biosope))
 

@@ -155,24 +155,38 @@ ggplot(merged_dist_clean)+
   geom_point(aes(x = tchla, y = chla), data = NAT_IRS, colour = "Red")
 
 g1 <- ggplot()+
-  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = ICB_profiles)+
-  geom_point(aes(x = tchla, y = -depth.x), data = NAT_ICB)+
-  ggtitle("NAT_ICB")+
-  ylim(-250,0)
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = filter(ICB_profiles, lovbio != "lovbio061c"), size = 1.1)+
+  geom_point(aes(x = tchla, y = -depth.x), data = filter(NAT_ICB, lovbio != "lovbio061c"))+
+  ggtitle("Bassin Icelandais")+
+  ylim(-250,0)+
+  xlab("Chlorophylle a")+
+  ylab("Profondeur")+
+  scale_color_brewer(name = "Flotteur", palette = "Set2")+
+  theme_bw(base_size = 20)
 
 g2 <- ggplot()+
-  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = IRS_profiles)+
-  geom_point(aes(x = tchla, y = -depth.x), data = NAT_IRS)+
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = filter(IRS_profiles, lovbio != "lovbio059c"))+
+  geom_point(aes(x = tchla, y = -depth.x), data = filter(NAT_IRS, lovbio != "lovbio059c"))+
   ggtitle("NAT_IRS")+
-  ylim(-250,0)
+  ylim(-250,0)+
+  theme_bw()
 
 g3 <- ggplot()+
-  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = LAS_profiles)+
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = LAS_profiles, size = 1.1)+
   geom_point(aes(x = tchla, y = -depth.x), data = NAT_LAS)+
-  ggtitle("NAT_LAS")+
-  ylim(-250,0)
+  ggtitle("Mer du Labrador")+
+  ylim(-250,0)+
+  xlab("Chlorophylle a")+
+  ylab("Profondeur")+
+  scale_color_brewer(name = "Flotteur", palette = "Set2")+
+  theme_bw(base_size = 20)
 
-grid.arrange(g1,g2,g3, ncol = 3)
+grid.arrange(g1,g3, ncol = 2)
+
+png(file = "argo/Plots/profiles_comp.png", width = 12.25, height = 7.73, units = "in", res = 100)
+grid.arrange(g1,g3, ncol = 2)
+dev.off()
+
 
 #Takuvik data ####
 
@@ -259,10 +273,15 @@ merged_full <- merged_full[order(merged_full$lovbio),]
 merged_full$profile <- profile_numb(merged_full$depth, "downward")
 
 ggplot(merged_full)+
-  geom_point(aes(x = lon.x, y = lat.x, colour = "hplc"), size = 3)+
-  geom_point(aes(x = lon.y, y = lat.y, colour = "argo"))+
+  geom_point(aes(x = lon.x, y = lat.x, colour = "hplc"), size = 5)+
+  geom_point(aes(x = lon.y, y = lat.y, colour = "argo"), size = 3)+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
-  coord_quickmap()
+  coord_quickmap()+
+  scale_color_brewer(name = "", palette = "Set1")+
+  theme_bw(base_size = 20)+
+  xlab("lon")+ ylab("lat")
+
+ggsave("argo/Plots/merge_map.png", scale = 2)
 
 ggplot(merged_full)+
   geom_point(aes(x = tchla, y = chla))

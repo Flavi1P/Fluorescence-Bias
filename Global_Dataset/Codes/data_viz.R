@@ -31,17 +31,18 @@ ggplot(dataset_tall)+
   geom_boxplot(aes(x = size_class, y = frequence, fill = campagne))+
   scale_fill_brewer(palette = "Set1")+
   ylim(0,1)+ylab("proportion de la classe de taille")+ xlab("classe de taille")+
-  theme_bw(base_size = 14)
+  theme_bw(base_size = 20)
 
-ggsave("Global_Dataset/Plots/size_class_boxplot.png", scale = 2)
+ggsave("Global_Dataset/Plots/size_class_boxplot.png")
 
 ggplot(dataset_tall)+
   geom_violin(aes(x = campagne, y = ratio, fill = campagne))+
   scale_fill_brewer(palette = "Set1")+
   guides(fill = FALSE)+
   ylim(0,15)+
-  theme_bw(base_size = 14)
-ggsave("Global_Dataset/Plots/ratio_violin.png", scale = 2)
+  ylab("fluo/chla ratio")+
+  theme_bw(base_size = 20)
+ggsave("Global_Dataset/Plots/ratio_violin.png")
 
 dataset <- bind_rows(argo, biosope, boussole) %>%
   mutate(pigsum = rowSums(.[, 1:7])) %>%
@@ -59,16 +60,17 @@ dataset <- bind_cols(dataset,scores)
 pigscore <- data.frame(afc$col$coord)
 
 ggplot()+
-  geom_point(aes(x = Dim.1, y = Dim.2, colour = campagne), size = 0.9, alpha = 0.8, data = dataset)+
+  geom_point(aes(x = Dim.1, y = Dim.2, colour = campagne), size = 0.9, alpha = 0.5, data = dataset)+
   geom_segment(aes(x = 0, xend = Dim.1, y = 0, yend = Dim.2), data = pigscore)+
   geom_text(aes(x = Dim.1, y = Dim.2, label = rownames(pigscore)), data = pigscore, size = 5)+
   scale_color_brewer(palette = "Set1")+
   ylab("CA2 (23%)") + xlab("CA1 (43%)")+
+  guides(colour = guide_legend(override.aes = list(size=4, alpha = 1)))+
   coord_equal()+
-  theme_bw(base_size = 14)
+  theme_bw(base_size = 20)
 
 
-ggsave("Global_Dataset/Plots/CA_comp.png", scale = 2)
+ggsave("Global_Dataset/Plots/CA_comp.png", scale = 1.5)
 biosope <- filter(dataset, campagne == "biosope") %>% 
   mutate(coord = paste(round(Dim.1,1), round(Dim.2,1), sep = ";"),
          dup = duplicated(coord)) %>% 

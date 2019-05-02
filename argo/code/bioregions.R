@@ -73,8 +73,8 @@ region_argo <- filter(region_argo, code != "ANTA")#delete this region because we
 g1 <- ggplot(region_argo)+
   geom_col(aes(x = reorder(code, mean), y = mean, fill = code))+
   geom_errorbar(aes(x = code, ymin = mean - sd, ymax = mean + sd))+
-  xlab("province océanique de longhurst")+
-  ylab("moyene du ratio chl_fluo/chla")+
+  xlab("province océanique")+
+  ylab("ratio fluo/chla")+
   geom_errorbar(aes(code, ymax = 2, ymin = 2),
                 size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
   geom_errorbar(aes(code, ymax = 1, ymin = 1),
@@ -82,7 +82,7 @@ g1 <- ggplot(region_argo)+
   geom_text(aes(x = code, y = mean + sd + 0.5, label = nbr_of_float))+
   guides(fill = FALSE)+
   scale_fill_brewer(palette = "Set1")+
-  theme_bw(base_size = 14)
+  theme_bw(base_size = 20)
 g1  
 
 
@@ -115,12 +115,12 @@ g2
 grid.arrange(g1,g2, ncol = 2)
 
 g3 <- ggplot(afc_table)+
-  geom_point(aes(x = lon.y, y = lat.y, colour = code), size = 2)+
+  geom_point(aes(x = lon.y, y = lat.y, fill = code), pch = 21, colour = "black", size = 4)+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
   xlab("lon")+ylab("lat")+
   coord_quickmap()+
-  scale_color_brewer(palette = "Set1")+
-  theme_bw(base_size = 14)
+  scale_fill_brewer(palette = "Set1")+
+  theme_bw(base_size = 20)
 
 g3
 

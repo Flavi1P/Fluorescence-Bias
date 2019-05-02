@@ -1,6 +1,8 @@
 library(tidyverse)
 library(zoo)
 library(vegan)
+library(nnls)
+library(Metrics)
 
 source("functions/phi_simple.R")
 
@@ -36,8 +38,8 @@ b <- rmse(biosope_calibration$tchla, biosope_calibration$fluo_urel)
 a/b
 
 ggplot(biosope_calibration)+
+  geom_point(aes(x = tchla, y = fluo_urel))+
   geom_point(aes(x = tchla, y = fluo_calibrate), colour = "Red")+
-  geom_point(aes(x = tchla, y = fluo_urel, colour = micro))+
   scale_color_viridis_c()
 
 

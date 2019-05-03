@@ -40,6 +40,8 @@ merged_argo <- filter(merged_argo, optical_layer < 4)
 
 phi_argo <- phi_boot(merged_argo, variable = "fluo")
 phi_argo$se <- ifelse(phi_argo$se > phi_argo$phi, phi_argo$phi, phi_argo$se)
+#write_csv(phi_argo, "argo/Data/phi_argo")
+
 
 phi_argo_tchla <- phi_boot(merged_argo, variable = "tchla")
 
@@ -72,9 +74,14 @@ argo_calibration <- argo_calibration %>% mutate(predict_fluo = tchla*(micro*amic
                                                 calibrate_fluo = (fluo/(micro*amicro * phi_micro + nano*anano * phi_nano + pico*apico * phi_pico))) 
 
 ggplot(filter(argo_calibration, optical_layer < 4))+
-  geom_point(aes(x = tchla , y = calibrate_fluo, colour = "calibrate"))+
-  geom_point(aes(x = tchla , y = chla_adjusted, colour = "fluo"))+
-  geom_line(aes(x = tchla, y = tchla))
+  geom_point(aes(x = tchla , y = calibrate_fluo, colour = "calibrate"), size = 1.5)+
+  geom_point(aes(x = tchla , y = chla_adjusted, colour = "fluo"), size = 1.5)+
+  geom_line(aes(x = tchla, y = tchla))+
+  scale_color_brewer(palette = "Set1", name = "", label = c("Chla calibrée", "Chla fluo"))+
+  ylab("Concentration en Chla estimée")+xlab("concentration en Chla mesurée")+
+  theme_bw(base_size = 16)
+ggsave("argo/Plots/calibration.png")
+
 
 argo_calibration <- filter(argo_calibration, is.na(calibrate_fluo) == FALSE)
 a <- rmse(argo_calibration$tchla, argo_calibration$calibrate_fluo)

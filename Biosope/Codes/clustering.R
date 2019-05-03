@@ -1,6 +1,7 @@
 library(tidyverse)
 library(zoo)
 library(vegan)
+library(ggsci)
 
 source("functions/profile_numb.R")
 source("functions/zeu_moma.R")
@@ -96,13 +97,13 @@ biosope$group <- as.factor(cutree(hclust(distbio, method = "ward.D"), k = 4))
 ggplot(biosope)+
   geom_point(aes(x = CA1, y = CA2, colour = group), size = 1.5)+
   geom_segment(aes(x = 0, xend = CA1, y = 0, yend = CA2), data = pigscore)+
-  geom_text(aes(x = CA1, y = CA2, label = rownames(pigscore)), data = pigscore)+
+  geom_text(aes(x = CA1, y = CA2, label = rownames(pigscore)), data = pigscore, size = 8)+
   geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = fitarrow, colour = "#33a02c")+
-  geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(fitarrow), fontface = 2), data = fitarrow)+
+  geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(fitarrow), fontface = 2), data = fitarrow, size = 8)+
   xlab("CA1 (63%)")+ ylab("CA2 (22%)")+
-  theme_bw(base_size = 14)+
-  coord_equal()+
-  scale_color_viridis_d()
+  scale_color_futurama(name = "Environnement", labels = c("Profond", "Upwelling", "ZE", "Surface"))+
+  theme_bw(base_size = 18)+
+  coord_equal()
 
 ggsave("Biosope/Plots/afc_biosope.png", scale = 1)
 
@@ -148,16 +149,16 @@ ggplot(biosope)+
   xlab("DCA1 52%")+ylab("DCA2 15%")+
   ggtitle("Detrend Correspondance analysis on Biosope HPLC data")
 
-library(ggsci)
+
 ggplot(biosope)+
   geom_point(aes(x = lon, y = -depth, colour = group_detrend), size = 4)+
   geom_path(aes(x = lon, y = -ze), colour = "Black")+
   ylab("Profondeur")+
-  scale_color_futurama(name = "Environnement", labels = c("Profond", "Upwelling", "DCM", "Surface"))+
+  scale_color_futurama(name = "Environnement", labels = c("Profond", "Upwelling", "ZE", "Surface"))+
   xlab("longitude")+
   theme_bw(base_size = 20)
 
-ggsave("Biosope/Plots/transect.png", scale = 2)
+#ggsave("Biosope/Plots/transect.png", scale = 2)
 
 world_data <- map_data("world") %>% fortify()
 

@@ -157,7 +157,7 @@ ggplot(merged_dist_clean)+
 g1 <- ggplot()+
   geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = filter(ICB_profiles, lovbio != "lovbio061c"), size = 1.1)+
   geom_point(aes(x = tchla, y = -depth.x), data = filter(NAT_ICB, lovbio != "lovbio061c"))+
-  ggtitle("Bassin Icelandais")+
+  ggtitle("Bassin Islandais")+
   ylim(-250,0)+
   xlab("Chlorophylle a")+
   ylab("Profondeur")+

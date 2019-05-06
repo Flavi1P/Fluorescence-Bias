@@ -26,17 +26,18 @@ fitarrow <- as.data.frame(fitscore$vectors$arrows)
 
 ggplot(boussole_ca)+
   geom_point(aes(x = CA1, y = CA2, colour = month), size = 1.5)+
-  geom_segment(aes(x = 0, xend = CA1, y = 0, yend = CA2), data = pigscore)+
-  geom_text(aes(x = CA1, y = CA2, label = rownames(pigscore)), data = pigscore, size = 8)+
-  geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = fitarrow, colour = "#33a02c")+
-  geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(fitarrow), fontface = 2), data = fitarrow, size = 8)+
+  geom_segment(aes(x = 0, xend = CA1*2, y = 0, yend = CA2*2), data = pigscore)+
+  geom_text_repel(aes(x = CA1*2, y = CA2*2, label = rownames(pigscore)), data = pigscore, size = 6)+
+  geom_segment(aes(x = 0, y = 0, xend = CA1*3, yend = CA2*3), data = fitarrow, colour = "#33a02c")+
+  geom_text(aes(x = CA1*3, y = CA2*3, label=rownames(fitarrow), fontface = 2), data = fitarrow, size = 6)+
   scale_color_viridis_d(name = "mois")+
   xlab("CA1 39%")+
   ylab("CA2 22%")+
+  ggtitle("Boussole")+
   #ggtitle("Correspondance Analysis of boussole pigment (2013:2015)")+
   ylim(-4,2.5)+
   coord_equal()+
-  theme_bw(base_size = 20)
+  theme_bw(base_size = 18)
 ggsave("Boussole/plots/afc_boussole.png", scale = 1)
 
 boussole$optical_layer <- round(boussole$optical_layer)

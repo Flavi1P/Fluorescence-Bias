@@ -5,7 +5,7 @@ library(nnls)
 library(FactoMineR)
 source("functions/phi_lm.R")
 source("functions/outliers.R")
-source("functions/phi_boot.R")
+source("functions/phi_simple.R")
 pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
 NAT_IRS_list <- c("lovbio059c", "lovbio045b", "lovbio024c", "lovbio044b", "lovbio031c", "lovbio027b", "lovbio040b", "lovbio026c")
 
@@ -21,16 +21,16 @@ influential <- outliers(select(merged_argo, fluo, tchla, micro, nano, pico))
 
 merged_argo <- merged_argo[-influential,] %>% filter(optical_layer<4)
 
-lines <- sample(1:233, 200)
+lines <- sample(1:nrow(merged_argo), 200)
 merged_argo_train <- merged_argo[lines,]
 merged_argo_test <- filter(merged_argo, !(rownames(merged_argo) %in% lines))
 
 #phi####
 
-phi_argo <- phi_boot(merged_argo_train, variable = "fluo")
+phi_argo <- phi_simple(merged_argo_train, variable = "fluo")
 phi_argo$se <- ifelse(phi_argo$se > phi_argo$phi, phi_argo$phi, phi_argo$se)
 
-phi_argo_tchla <- phi_boot(merged_argo_train, variable = "tchla")
+phi_argo_tchla <- phi_simple(merged_argo_train, variable = "tchla")
 
 yield_ratio <- phi_argo$phi/phi_argo_tchla$phi
 
@@ -55,8 +55,8 @@ names(phi_argo) <- c("optical_layer", "phi_micro", "phi_nano", "phi_pico")
 
 argo_calibration_test <- left_join(merged_argo_test, phi_argo) 
 
-argo_calibration_test <- argo_calibration_test %>% mutate(predict_fluo = tchla*(micro*amicro * phi_micro + nano*anano * phi_nano + pico*apico * phi_pico),
-                                                calibrate_fluo = (fluo/(micro*amicro * phi_micro + nano*anano * phi_nano + pico*apico * phi_pico))) 
+argo_calibration_test <- argo_calibration_test %>% mutate(predict_fluo = tchla*(micro* phi_micro + nano * phi_nano + pico * phi_pico),
+                                                calibrate_fluo = (fluo/(micro * phi_micro + nano * phi_nano + pico * phi_pico))) 
 
 ggplot(argo_calibration_test)+
   geom_point(aes(x = tchla , y = calibrate_fluo, colour = "calibrate"))+
@@ -69,27 +69,40 @@ b <- rmse(argo_calibration_test$tchla, argo_calibration_test$chla_adjusted)
 a/b
 
 argo_calibration_test$ratio <- argo_calibration_test$calibrate_fluo/argo_calibration_test$tchla
-#afc####
 
-afc_table <- na.omit(select(argo_calibration_test, pigments, micro, nano, pico,  ratio))
+rmse_value <- c(1:10000)
 
-afc_argo <- cca(na.omit(select(afc_table, pigments)))
-test <- envfit(afc_argo, select(afc_table, micro, nano, pico, ratio))
+for(i in 1:10000){
+  lines <- sample(1:nrow(merged_argo), 200)
+  merged_argo_train <- merged_argo[lines,]
+  merged_argo_test <- filter(merged_argo, !(rownames(merged_argo) %in% lines))
+  
+  #phi####
+  
+  phi_argo <- phi_simple(merged_argo_train, variable = "fluo")
+  phi_argo$se <- ifelse(phi_argo$se > phi_argo$phi, phi_argo$phi, phi_argo$se)
+  
+  
+  phi_argo <- phi_argo %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)
+  names(phi_argo) <- c("optical_layer", "phi_micro", "phi_nano", "phi_pico") 
+  
+  
+  argo_calibration_test <- left_join(merged_argo_test, phi_argo, by = "optical_layer") 
+  
+  argo_calibration_test <- argo_calibration_test %>% mutate(predict_fluo = tchla*(micro* phi_micro + nano * phi_nano + pico * phi_pico),
+                                                            calibrate_fluo = (fluo/(micro * phi_micro + nano * phi_nano + pico * phi_pico))) 
+  
+  argo_calibration_test <- filter(argo_calibration_test, is.na(calibrate_fluo) == FALSE)
+  a <- rmse(argo_calibration_test$tchla, argo_calibration_test$calibrate_fluo)
+  b <- rmse(argo_calibration_test$tchla, argo_calibration_test$chla_adjusted)
+  a/b
+  
+  argo_calibration_test$ratio <- argo_calibration_test$calibrate_fluo/argo_calibration_test$tchla
+  print(i)
+  
+  rmse_value[i] <- a/b
+}
 
-env_arrow <- as.data.frame(test$vectors$arrows) #On récupère les donnes du modele sur les variables environnementales
-
-argo_score <- as.data.frame(scores(afc_argo, choices = c(1,2,3,4,5), display = c("site"))) #this is a dataframe with the score on the 5 axes of each sample
-
-afc_table <- bind_cols(afc_table, argo_score)
-
-pig_score <- as.data.frame(scores(afc_argo, choices = c(1,2,3,4,5), display = c("species")))
-
-
-ggplot()+
-  geom_point(aes(x = CA1, y = CA2, colour = ratio), size = 2, data = afc_table)+
-  geom_segment(aes(x = 0, xend = CA1 *1.5, y = 0, yend = CA2*1.5), data = pig_score)+
-  geom_text_repel(aes(x = CA1*1.5, y = CA2*1.5, label = rownames(pig_score)), data = pig_score)+
-  geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = env_arrow, colour = "#33a02c")+
-  geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(env_arrow), fontface = 2), data = env_arrow)+
-  coord_equal()
-
+mean(rmse_value)
+median(rmse_value)
+sd(rmse_value)

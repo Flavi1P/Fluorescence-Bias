@@ -26,16 +26,32 @@ merged <- select(merged, lon.y, lat.y, chla, tchla, depth, lovbio)
 profiles <- left_join(first_profiles, merged, by = c("chla", "lon" = "lon.y", "lat" = "lat.y", "depth"))
 
 
-i <- "lovbio025c"
+group_1 <- c("lovbio043b", "lovbio057b")
+group_2 <- c("lovbio050b", "lovbio082b")
+group_3 <- c("lovbio042d", "lovbio037c")
+
 ggplot()+
-  geom_path(aes(x = chla_adjusted, y = -pres), data = filter(first_profiles, lovbio == i))+
-  geom_point(aes(x = tchla, y = - depth), data = filter(merged, lovbio == i))+
-  ggtitle(i)
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = filter(first_profiles, lovbio %in% group_1))+
+  geom_point(aes(x = tchla, y = - depth), data = filter(merged, lovbio %in% group_1))+
+  ggtitle(i)+
+  ylim(-250,0)
+
+ggplot()+
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = filter(first_profiles, lovbio %in% group_2))+
+  geom_point(aes(x = tchla, y = - depth), data = filter(merged, lovbio %in% group_2))+
+  ggtitle(i)+
+  ylim(-250,0)
+
+ggplot()+
+  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio), data = filter(first_profiles, lovbio %in% group_3))+
+  geom_point(aes(x = tchla, y = - depth), data = filter(merged, lovbio %in% group_3))+
+  ggtitle(i)+
+  ylim(-250,0)
 
 
 ggplot()+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
-  geom_point(aes(x = lon, y = lat), data = filter(first_profiles, lovbio == i), colour = "Red")+
+  geom_point(aes(x = lon, y = lat), data = filter(first_profiles, lovbio == ), colour = "Red")+
   coord_quickmap()
 
 ggplot()+

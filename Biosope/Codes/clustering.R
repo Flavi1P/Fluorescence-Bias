@@ -108,7 +108,7 @@ ggplot(biosope)+
   xlim(-1.5,3)+
   coord_equal()
 
-ggsave("Biosope/Plots/afc_biosope.png", scale = 1)
+#ggsave("Biosope/Plots/afc_biosope.png", scale = 1)
 
 resume_clust <- biosope %>% select(group, micro, nano, pico, ratio, tchla, fluo_urel) %>% group_by(group) %>% 
   summarize_all(c(mean, sd)) %>% ungroup()
@@ -152,16 +152,23 @@ ggplot(biosope)+
   xlab("DCA1 52%")+ylab("DCA2 15%")+
   ggtitle("Detrend Correspondance analysis on Biosope HPLC data")
 
+ze_data <- biosope %>% select(lon, ze) %>% mutate(lon_round = round(lon, 1)) %>%  group_by(lon_round) %>% summarize_all(mean) %>% ungroup() %>% select(-lon)
+
+ze_data$ze <- rollmean(ze_data$ze, 3, fill = c(89.5, NA, 43.9))
+
+biosope <- select(biosope, -ze) %>% mutate(lon_round = round(lon, 1)) %>% left_join(., ze_data, by = "lon_round")
+
+
 
 ggplot(biosope)+
   geom_point(aes(x = lon, y = -depth, colour = group_detrend), size = 4)+
-  geom_path(aes(x = lon, y = -ze), colour = "Black")+
-  ylab("Profondeur")+
+  geom_point(aes(x = lon, y = -ze), size = 3, colour = "Black")+
+  ylab("Profondeur (m)")+
   scale_color_futurama(name = "Environnement", labels = c("Profond", "Upw/Marq", "ZE", "Surface"))+
-  xlab("longitude")+
+  xlab("Longitude (° Ouest)")+
   theme_bw(base_size = 20)
 
-#ggsave("Biosope/Plots/transect.png", scale = 2)
+#ggsave("Biosope/Plots/transect.png")
 
 world_data <- map_data("world") %>% fortify()
 

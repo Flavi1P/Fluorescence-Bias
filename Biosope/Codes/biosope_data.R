@@ -3,7 +3,7 @@ library(data.table)
 library(readxl)
 library(lubridate)
 
-biosoperaw <- read_excel("Scripts/Data/Raw/Full/BDD_HPLC_fluo_cruises/Biosope_odv_btl.xlsx")
+biosoperaw <- read_excel("Data/Raw/Full/BDD_HPLC_fluo_cruises/Biosope_odv_btl.xlsx")
 names(biosoperaw) <- tolower(colnames(biosoperaw))
 
 biosope <- biosoperaw %>% select(campagne, date, longitude, latitude, btle, "p[dbar]", "t[its90]", salinite,

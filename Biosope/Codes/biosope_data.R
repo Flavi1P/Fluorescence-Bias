@@ -20,7 +20,7 @@ biosope$date <- as_date(biosope$date, tz = "UTC", format = "%m/%d/%Y")
 biosope$lat <- round(biosope$lat, 2)
 biosope$lon <- round(biosope$lon, 2)
 
-map_vec <- read_csv("Scripts/Data/map_vec")
+map_vec <- read_csv("Data/map_vec")
 
 ggplot() + 
   geom_polygon( data = filter(map_vec, long < -30 & long > -160 & lat > -60 & lat < 10) , aes(x = long,y = lat, group = group), fill = "Grey")+

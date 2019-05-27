@@ -82,7 +82,8 @@ g1 <- ggplot(region_argo)+
   geom_text(aes(x = code, y = mean + sd + 0.5, label = nbr_of_float))+
   guides(fill = FALSE)+
   scale_fill_brewer(palette = "Set1")+
-  theme_bw(base_size = 20)
+  theme_bw(base_size = 20)+
+  ylim(0,8)
 g1  
 
 
@@ -102,14 +103,15 @@ afc_table <- bind_cols(afc_table, argo_score)
 pig_score <- as.data.frame(scores(afc_argo, choices = c(1,2,3,4,5), display = c("species")))
 
 
-g2 <- ggplot()+
+ggplot()+
   geom_point(aes(x = CA1, y = CA2, colour = code), size = 2, data = afc_table)+
   geom_segment(aes(x = 0, xend = CA1 *1.5, y = 0, yend = CA2*1.5), data = pig_score)+
   geom_text_repel(aes(x = CA1*1.5, y = CA2*1.5, label = rownames(pig_score)), data = pig_score)+
   geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = env_arrow, colour = "#33a02c")+
   geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(env_arrow), fontface = 2), data = env_arrow)+
   scale_color_brewer(palette = "Set1") + coord_equal() +
-  guides(colour = FALSE)
+  guides(colour = FALSE)+
+  theme_bw()
 
 g2
 grid.arrange(g1,g2, ncol = 2)
@@ -155,17 +157,17 @@ fitarrow_detrend <- as.data.frame(fitscore_detrend$vectors$arrows)
 
 
 ggplot(afc_table)+
-  geom_point(aes(x = DCA1, y = DCA2, colour = code), size = 1.5)+
+  geom_point(aes(x = DCA1, y = DCA2, colour = code), size = 3)+
   geom_segment(aes(x = 0, xend = DCA1 * 3/4, y = 0, yend = DCA2 *3/4), data = pigscore_detrend)+
-  geom_text(aes(x = DCA1 * 3/4, y = DCA2 * 3/4, label = rownames(pigscore_detrend)), data = pigscore_detrend)+
+  geom_text(aes(x = DCA1 * 3/4, y = DCA2 * 3/4, label = rownames(pigscore_detrend)), data = pigscore_detrend, size = 6)+
   geom_segment(aes(x = 0, y = 0, xend = DCA1, yend = DCA2), data = fitarrow_detrend, colour = "#33a02c", size = 1)+
-  geom_text(aes(x = DCA1, y = DCA2, label=rownames(fitarrow_detrend), fontface = 2), data = fitarrow_detrend)+
-  scale_color_brewer(name = "region", palette = "Set1")+
+  geom_text(aes(x = DCA1, y = DCA2, label=rownames(fitarrow_detrend), fontface = 2), data = fitarrow_detrend, size = 7)+
+  scale_color_brewer(name = "Code", palette = "Set1")+
   coord_equal()+
   xlab("DCA1 47%")+ylab("DCA2 7%")+
 #  ggtitle("Detrend Correspondance analysis on Argo HPLC data")+
-  theme_bw(base_size = 14)
-ggsave("argo/Plots/DCA.png", scale = 2)
+  theme_bw(base_size = 16)
+ggsave("argo/Plots/DCA.png")
 
 fit1 <- lm(ratio~microfluo + nanofluo + picofluo, data =argo)
 plot(fit1)

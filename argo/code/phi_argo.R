@@ -2,10 +2,12 @@ library(tidyverse)
 library(Metrics)
 library(vegan)
 library(nnls)
+library(sf)
 library(FactoMineR)
 source("functions/phi_lm.R")
 source("functions/outliers.R")
 source("functions/phi_boot.R")
+path = "Data/Longhurst"
 pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
 NAT_IRS_list <- c("lovbio059c", "lovbio045b", "lovbio024c", "lovbio044b", "lovbio031c", "lovbio027b", "lovbio040b", "lovbio026c")
 
@@ -73,17 +75,95 @@ argo_calibration <- left_join(merged_argo, phi_argo)
 argo_calibration <- argo_calibration %>% mutate(predict_fluo = tchla*(micro*amicro * phi_micro + nano*anano * phi_nano + pico*apico * phi_pico),
                                                 calibrate_fluo = (fluo/(micro*amicro * phi_micro + nano*anano * phi_nano + pico*apico * phi_pico))) 
 
+ggplot(argo_calibration)+
+  geom_violin(aes(y = chla_adjusted/tchla, x = optical_layer))
+longhurst_sf <- read_sf(dsn = path.expand(path), quiet = TRUE)
+
+names(longhurst_sf) <- c("code", "region", "geometry")
+
+#longhurst_sf %>% ggplot() + geom_sf(aes(fill = code))
+
+pnts_sf <- do.call("st_sfc",c(lapply(1:nrow(argo_calibration),
+                                     function(i) {st_point(as.numeric(argo_calibration[i,c("lon.y", "lat.y") ]))}), list("crs" = 4326))) 
+pnts_trans <- st_transform(pnts_sf, 4326)
+longhurst_trans <- st_transform(longhurst_sf, 4326)  
+argo_calibration$code <- apply(st_intersects(longhurst_trans, pnts_trans, sparse = FALSE), 2, 
+                   function(col) { 
+                     longhurst_trans[which(col), ]$code
+                   })
+
+argo_mean <- argo_calibration %>% mutate(ratio = calibrate_fluo/tchla) %>% select(code, ratio) %>% 
+  group_by(code) %>% 
+  na.omit(.) %>% 
+  summarise_all(c(mean, sd))
+
+g2 <- ggplot(argo_mean)+
+  geom_col(aes(x = reorder(code, fn1), y = fn1, fill = code))+
+  geom_errorbar(aes(x = code, ymin = fn1-fn2, ymax = fn1 + fn2))+
+  scale_fill_brewer(palette = "Set1")+
+  geom_errorbar(aes(code, ymax = 2, ymin = 2),
+                size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
+  geom_errorbar(aes(code, ymax = 1, ymin = 1),
+                size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
+  guides(fill = FALSE)+
+  ylim(0,8)+
+  theme_bw()
+
+argo_mean_roesler <- argo_calibration %>% mutate(ratio = chla_adjusted/tchla) %>% select(code, ratio) %>% 
+  group_by(code) %>% 
+  na.omit(.) %>% 
+  summarise_all(c(mean, sd))
+
+ggplot(argo_mean_roesler)+
+  geom_col(aes(x = reorder(code, fn1), y = fn1, fill = code))+
+  geom_errorbar(aes(x = code, ymin = fn1-fn2, ymax = fn1 + fn2))+
+  scale_fill_brewer(palette = "Set1")+
+  geom_errorbar(aes(code, ymax = 2, ymin = 2),
+                size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
+  geom_errorbar(aes(code, ymax = 1, ymin = 1),
+                size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
+  guides(fill = FALSE)+
+  ylim(0,8)+
+  theme_bw()
+
 ggplot(filter(argo_calibration, optical_layer < 4))+
   geom_point(aes(x = tchla , y = calibrate_fluo, colour = "calibrate"), size = 1.5)+
+  geom_point(aes(x = tchla , y = chla_adjusted*2, colour = "fluo"), size = 1.5)+
+  geom_line(aes(x = tchla, y = tchla))+
+  scale_color_brewer(palette = "Set1", name = "", label = c("Chla calibrée", "Chla fluo"))+
+  ylab("Concentration en Chla estimée")+xlab("Concentration en Chla mesurée")+
+  theme_bw(base_size = 16)+
+  coord_trans(x = "log", y = "log")
+  
+  #♣ggsave("argo/Plots/calibration.png")
+  
+g1 <- ggplot(filter(argo_calibration, optical_layer < 4))+
   geom_point(aes(x = tchla , y = chla_adjusted, colour = "fluo"), size = 1.5)+
+  geom_smooth(aes(x = tchla, y = chla_adjusted), method = "lm", se = F, colour = "blue")+
+  geom_line(aes(x = tchla, y = tchla))+
+  ylab("Concentration en Chla estimée")+xlab("concentration en Chla mesurée")+
+  theme_bw(base_size = 16)+
+  ylim(0,3.5)
+
+g2 <- ggplot(filter(argo_calibration, optical_layer < 4))+
+  geom_point(aes(x = tchla , y = calibrate_fluo, colour = "calibrate"), size = 1.5)+
+  geom_smooth(aes(x = tchla, y = calibrate_fluo), method = "lm", se = F, colour = "red")+
   geom_line(aes(x = tchla, y = tchla))+
   scale_color_brewer(palette = "Set1", name = "", label = c("Chla calibrée", "Chla fluo"))+
   ylab("Concentration en Chla estimée")+xlab("concentration en Chla mesurée")+
-  theme_bw(base_size = 16)
-ggsave("argo/Plots/calibration.png")
+  theme_bw(base_size = 16)+
+  ylim(0,3.5)
+
+grid.arrange(g1,g2, ncol = 2)  
+
 
 
 argo_calibration <- filter(argo_calibration, is.na(calibrate_fluo) == FALSE)
 a <- rmse(argo_calibration$tchla, argo_calibration$calibrate_fluo)
 b <- rmse(argo_calibration$tchla, argo_calibration$chla_adjusted)
 a/b
+
+ggplot(argo_calibration)+
+  coord_tern()+
+  geom_point(aes(x= micro, y = nano, z = pico, colour = code))+
+  scale_color_brewer(palette = "Set1")

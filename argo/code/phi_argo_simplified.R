@@ -21,16 +21,15 @@ merged_argo <- filter(merged_argo, !(lovbio %in% NAT_IRS_list))
 merged_argo$fluo <- merged_argo$chla_adjusted * 2
 merged_argo$ratio <- merged_argo$fluo/merged_argo$tchla
 
-influential <- outliers(select(merged_argo, fluo, tchla, ratio, micro, nano, pico))
+influential <- outliers(select(merged_argo, fluo, tchla))
 
 merged_argo <- merged_argo[-influential,]
 
-ggplot(merged_argo)+
-  geom_density(aes(x = ratio))
 merged_argo <- filter(merged_argo, optical_layer < 4)
 
+
 phi_argo <- phi_simple(merged_argo, variable = "fluo")
-write_csv(phi_argo, "argo/Data/phi_argo")
+#write_csv(phi_argo, "argo/Data/phi_argo")
 phi_argo$phi <- ifelse(phi_argo$size == "pico", 0, phi_argo$phi)
 phi_argo$se <- ifelse(phi_argo$se > phi_argo$phi, phi_argo$phi, phi_argo$se)
 

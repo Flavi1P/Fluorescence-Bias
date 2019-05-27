@@ -101,3 +101,7 @@ ggplot()+
   geom_text(aes(x = Dim.1, y = Dim.2, label = rownames(pigscore)), data = pigscore)+
   scale_color_brewer(palette = "Set1")+
   theme_bw()
+
+summary(lm(ratio~micro+nano+pico, data = filter(dataset, campagne == "argo")))
+summary(lm(ratio~micro+nano+pico, data = filter(dataset, campagne == "biosope")))
+summary(lm(ratio~micro+nano+pico, data = filter(dataset, campagne == "boussole" & ratio != "Inf")))

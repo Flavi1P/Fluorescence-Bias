@@ -33,13 +33,13 @@ phi_argo <- phi_simple(merged_argo, variable = "fluo")
 phi_argo$phi <- ifelse(phi_argo$size == "pico", 0, phi_argo$phi)
 phi_argo$se <- ifelse(phi_argo$se > phi_argo$phi, phi_argo$phi, phi_argo$se)
 
-
+phi_argo$optical_layer <- c(rep("0-0.5 z/ze", 3), rep("0.5-1 z/ze", 3), rep("1-1.5 z/ze",3))
 
 ggplot(phi_argo, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   geom_bar(position=position_dodge(), stat="identity") +
   geom_errorbar(aes(ymin = phi-se, ymax = phi+se),position=position_dodge())+
   scale_fill_viridis_d( name = "Couche optique")+
-  ylab("Phi")+ xlab("classe de taille") +
+  ylab("Rendement de fluorescence")+ xlab("Classe de taille") +
   theme_bw(base_size = 18)
 
 ggsave("argo/Plots/phi_argo.png")

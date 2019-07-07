@@ -3,6 +3,7 @@ library(nnls)
 library(Metrics)
 theme_set(theme_bw())
 source("functions/phi_lm.R")
+source("functions/phi_simple.R")
 source("functions/phi_boot.R")
 
 
@@ -23,7 +24,8 @@ head(boussole[influential, ])
 boussole <- boussole[-influential,]
 
 phi_bouss_lm <- phi_lm(boussole, "fluo")
-phi_bouss_nnls <- phi_boot(boussole, "fluo")
+boussole <- boussole %>% mutate(microquanti = micro * tchla, nanoquanti = nano * tchla, picoquanti = pico * tchla, ratio = fluo/tchla) %>% filter(ratio < 10)
+phi_bouss_nnls <- phi_simple(boussole, "fluo")
 
 phi_bouss_nnls$se <- ifelse(phi_bouss_nnls$phi > phi_bouss_nnls$se, phi_bouss_nnls$se, phi_bouss_nnls$phi)
 

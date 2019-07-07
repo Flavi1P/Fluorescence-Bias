@@ -14,7 +14,14 @@ biosope$optical_layer <- round(biosope$optical_layer)
 biosope <- filter(biosope, optical_layer < 4) %>% mutate(microquanti = micro * tchla,
                                                          picoquanti = pico * tchla,
                                                          nanoquanti = nano * tchla)
-phi_biosope <- phi_simple(biosope, "fluo_urel")
+biosope$ratio <- biosope$fluo_urel/biosope$tchla
+
+ggplot(filter(biosope, depth < 1/5*ze))+
+  geom_point(aes(x = lon, y = ratio))+
+  geom_smooth(aes(x = lon, y = ratio), se = FALSE)+
+  theme_bw()
+
+phi_biosope <- phi_simple(biosope, "fluo_v")
 
 ggplot(phi_biosope, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   geom_bar(position=position_dodge(), stat="identity") +

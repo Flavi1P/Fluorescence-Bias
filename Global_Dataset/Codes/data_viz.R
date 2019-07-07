@@ -27,21 +27,24 @@ dataset_tall <- bind_rows(argo, biosope, boussole) %>%
   gather(key = "size_class", value = "frequence", 1:3) %>% 
   ungroup()
 
+
 ggplot(dataset_tall)+
   geom_boxplot(aes(x = size_class, y = frequence, fill = campagne))+
-  scale_fill_brewer(palette = "Set1")+
-  ylim(0,1)+ylab("proportion de la classe de taille")+ xlab("classe de taille")+
-  theme_bw(base_size = 20)
+  scale_fill_brewer(palette = "Set1", name = "Jeu de données", labels = c("argo" = "BGC-Argo", "biosope" = "BIOSOPE", "boussole" = "BOUSSOLE"))+
+  ylim(0,1)+ylab("Proportion de la classe de taille")+ xlab("Classe de taille")+
+  scale_x_discrete(labels = c("micro" = "Micro", "nano" = "Nano", "pico" = "Pico"))+
+  theme_bw(base_size = 18)
 
-#ggsave("Global_Dataset/Plots/size_class_boxplot.png")
+#ggsave("Global_Dataset/Plots/size_class_boxplot.png", scale = 1.2)
 
 ggplot(dataset_tall)+
   geom_violin(aes(x = campagne, y = ratio, fill = campagne))+
   scale_fill_brewer(palette = "Set1")+
   guides(fill = FALSE)+
-  ylim(0,15)+
-  ylab("Rapport fluorescence/chla")+
-  xlab("Campagne")+
+  ylim(0,10)+
+  ylab("Rapport [Chla]fluo / [Chla]HPLC")+
+  xlab("Jeu de données")+
+  scale_x_discrete(labels = c("argo" = "BGC-Argo", "biosope" = "BIOSOPE", "boussole" = "BOUSSOLE"))+
   theme_bw(base_size = 20)
 #ggsave("Global_Dataset/Plots/ratio_violin.png")
 
@@ -67,18 +70,19 @@ pigscore <- data.frame(afc$col$coord)
 dataset$cos <- (dataset$Dim.11+ dataset$Dim.21)
 
 ggplot()+
-  geom_point(aes(x = Dim.1, y = Dim.2, colour = campagne, alpha = cos), size = 0.9, data = dataset)+
+  geom_point(aes(x = Dim.1, y = Dim.2, colour = campagne), size = 0.9, data = dataset)+
   geom_segment(aes(x = 0, xend = Dim.1, y = 0, yend = Dim.2), size = 0.8, data = pigscore)+
   ggrepel::geom_text_repel(aes(x = Dim.1, y = Dim.2, label = rownames(pigscore)), data = pigscore, size = 7)+
-  scale_color_brewer(palette = "Set1")+
+  scale_color_brewer(palette = "Set1", labels = c("argo" = "BGC-Argo", "biosope" = "BIOSOPE", "boussole" = "BOUSSOLE"), name = "Jeu de données")+
   ylab("CA2 (23%)") + xlab("CA1 (43%)")+
   guides(colour = guide_legend(override.aes = list(size=4, alpha = 1)), alpha = guide_legend(title = "Cos²"))+
-  theme(legend.position=c(.78,0.9),
+  theme(legend.position=c(.76,0.85),
         legend.background = element_rect(fill = "transparent"),
         legend.key = element_blank(),
         legend.box = "horizontal",
         legend.text = element_text(size = 16),
         legend.title = element_text(size = 16),
+        axis.text = element_text(size = 16),
         axis.title = element_text(size = 16),
         panel.background = element_rect(fill = "white", colour = "black"),
         panel.grid.major = element_line(size = 0.05, linetype = 'solid',
@@ -88,7 +92,7 @@ ggplot()+
   coord_equal()
 
 
-ggsave("Global_Dataset/Plots/CA_comp.png")
+#ggsave("Global_Dataset/Plots/CA_comp.png", scale = 1.5)
 biosope <- filter(dataset, campagne == "biosope") %>% 
   mutate(coord = paste(round(Dim.1,1), round(Dim.2,1), sep = ";"),
          dup = duplicated(coord)) %>% 

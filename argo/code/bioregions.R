@@ -6,8 +6,11 @@ library(ggrepel)
 library(gridExtra)
 library(grid)
 library(nnls)
+library(FactoMineR)
 path = "Data/Longhurst"
 argo <- read_csv("Data/merged_argo")
+source("functions/outliers.R")
+source("functions/phi_simple.R")
 map_vec <- read_csv("Data/map_vec")
 pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
 NAT_IRS_list <- c("lovbio059c", "lovbio045b", "lovbio024c", "lovbio044b", "lovbio031c", "lovbio027b", "lovbio040b", "lovbio026c")
@@ -34,9 +37,16 @@ argo$code <- apply(st_intersects(longhurst_trans, pnts_trans, sparse = FALSE), 2
                      })
 
 ggplot(argo)+
-  geom_point(aes(x = lon.x, y = lat.x, colour = code), size = 3)+
-  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
+  geom_point(aes(x = lon.x, y = lat.x), size = 4, shape = 21, fill = "red2")+
+  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec, fill = "gray28")+
+  theme_bw(base_size = 16)+
+  xlab("Longitude (°E)")+
+  ylab("Latitude (°N)")+
   coord_quickmap()
+#ggsave("argo/Plots/map.png")
+
+
+
 
 argo <- filter(argo, optical_layer < 4)
 
@@ -46,7 +56,7 @@ argo <- argo[-influential,]
 
 nbr_match_region<- count(argo, "code")
 nbr_float_region <- argo %>% filter(duplicated(lovbio) == FALSE) %>% count("code")
-resume_region <- bind_cols(nbr_float_region, nbr_match_region) %>% select(1,2,4)
+resume_region <- bind_cols(nbr_float_region, nbr_match_region) %>% dplyr::select(1,2,4)
 
 names(resume_region) <- c("code", "nbr_of_float", "nbr_of_match")
 
@@ -73,18 +83,17 @@ region_argo <- filter(region_argo, code != "ANTA")#delete this region because we
 g1 <- ggplot(region_argo)+
   geom_col(aes(x = reorder(code, mean), y = mean, fill = code))+
   geom_errorbar(aes(x = code, ymin = mean - sd, ymax = mean + sd))+
-  xlab("province océanique")+
-  ylab("ratio fluo/chla")+
-  geom_errorbar(aes(code, ymax = 2, ymin = 2),
-                size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
+  xlab("Province océanique")+
+  ylab("Rapport Fluo/Chla")+
   geom_errorbar(aes(code, ymax = 1, ymin = 1),
-                size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
+                size=1, linetype = "longdash", inherit.aes = F, width = 1)+
   geom_text(aes(x = code, y = mean + sd + 0.5, label = nbr_of_float))+
   guides(fill = FALSE)+
   scale_fill_brewer(palette = "Set1")+
   theme_bw(base_size = 20)+
-  ylim(0,8)
+  ylim(0,9)
 g1  
+
 
 
 #AFC####
@@ -119,14 +128,15 @@ grid.arrange(g1,g2, ncol = 2)
 g3 <- ggplot(afc_table)+
   geom_point(aes(x = lon.y, y = lat.y, fill = code), pch = 21, colour = "black", size = 4)+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
-  xlab("lon")+ylab("lat")+
+  xlab("Longitude (°E)")+ylab("Latitude (°N)")+
   coord_quickmap()+
-  scale_fill_brewer(palette = "Set1")+
-  theme_bw(base_size = 20)
+  scale_fill_brewer(palette = "Set1", name = "Province océanique", labels = c("Archipelagos", "Arctique Atlantique", "Boréal Polaire", "Méditerranée", "Courant Circumpolaire Antarctique", "Atlantique Subarctique", "Gyre Subtropical Pacifique Sud"))+
+  guides("fill" = FALSE)+
+  theme_bw(base_size = 18)
 
 g3
 
-
+#ggsave("argo/Plots/map_simple.png")
 
 grid.newpage()
 pushViewport(viewport(layout = grid.layout(2,2)))

@@ -71,6 +71,8 @@ a/b
 argo_calibration_test$ratio <- argo_calibration_test$calibrate_fluo/argo_calibration_test$tchla
 
 rmse_value <- c(1:10000)
+rmse_commu <- c(1:10000)
+rmse_lineaire <- c(1:10000)
 
 for(i in 1:10000){
   lines <- sample(1:nrow(merged_argo), 200)
@@ -101,8 +103,18 @@ for(i in 1:10000){
   print(i)
   
   rmse_value[i] <- a/b
+  rmse_commu[i] <- a
+  rmse_lineaire[i] <- b
 }
 
 mean(rmse_value)
 median(rmse_value)
 sd(rmse_value)
+
+mean(rmse_lineaire)
+median(rmse_lineaire)
+sd(rmse_lineaire)
+
+mean(rmse_commu)
+median(rmse_commu)
+sd(rmse_commu)

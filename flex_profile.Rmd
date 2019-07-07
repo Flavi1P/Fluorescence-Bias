@@ -58,8 +58,7 @@ renderPlot({
   geom_path(aes(x = chla_adjusted, y = -pres), data = filter(first_profiles, lovbio == input$lovbio), colour = "limegreen", size = 1.1)+
   geom_point(aes(x = tchla, y = - depth), data = filter(merged, lovbio == input$lovbio), colour = "Red")+
   ggtitle(input$lovbio)+
-  theme_bw()+
-    ylim(-250,0)
+  theme_bw()
 })
 ```
 

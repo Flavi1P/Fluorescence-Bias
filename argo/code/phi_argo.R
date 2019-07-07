@@ -16,6 +16,8 @@ merged_argo <- read_csv("Data/merged_argo")
 merged_argo <- filter(merged_argo, lovbio != "lovbio067c" & lovbio != "lovbio083d" & lovbio != "lovbio085d" & lovbio != "lovbio090d") #filter profile with only 1 match
 merged_argo <- filter(merged_argo, !(lovbio %in% NAT_IRS_list))
 
+
+
 ggplot(merged_argo)+
   geom_point(aes(x = lon.x, y = lat.x, colour = "hplc"), size = 3)+
   geom_point(aes(x = lon.y, y = lat.y, colour = "argo"))+
@@ -81,7 +83,6 @@ longhurst_sf <- read_sf(dsn = path.expand(path), quiet = TRUE)
 
 names(longhurst_sf) <- c("code", "region", "geometry")
 
-#longhurst_sf %>% ggplot() + geom_sf(aes(fill = code))
 
 pnts_sf <- do.call("st_sfc",c(lapply(1:nrow(argo_calibration),
                                      function(i) {st_point(as.numeric(argo_calibration[i,c("lon.y", "lat.y") ]))}), list("crs" = 4326))) 
@@ -92,22 +93,44 @@ argo_calibration$code <- apply(st_intersects(longhurst_trans, pnts_trans, sparse
                      longhurst_trans[which(col), ]$code
                    })
 
-argo_mean <- argo_calibration %>% mutate(ratio = calibrate_fluo/tchla) %>% select(code, ratio) %>% 
+argo_mean <- argo_calibration %>% mutate(ratio = calibrate_fluo/tchla, ratio2 = fluo/tchla) %>% select(code, ratio, ratio2) %>% 
   group_by(code) %>% 
   na.omit(.) %>% 
   summarise_all(c(mean, sd))
 
-g2 <- ggplot(argo_mean)+
-  geom_col(aes(x = reorder(code, fn1), y = fn1, fill = code))+
-  geom_errorbar(aes(x = code, ymin = fn1-fn2, ymax = fn1 + fn2))+
+argo_mean$ratio2_fn1[argo_mean$code == "BPLR"] <- argo_mean$ratio2_fn1[argo_mean$code == "BPLR"] +0.5
+argo_mean$ratio2_fn1[argo_mean$code == "Arct"] <- argo_mean$ratio2_fn1[argo_mean$code == "Arct"] +1
+
+
+ggplot(argo_mean)+
+  geom_col(aes(x = reorder(code, ratio2_fn1), y = ratio_fn1, fill = code))+
+  geom_errorbar(aes(x = code, ymin = ratio_fn1-ratio_fn2, ymax = ratio_fn1 + ratio_fn2))+
   scale_fill_brewer(palette = "Set1")+
-  geom_errorbar(aes(code, ymax = 2, ymin = 2),
-                size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
   geom_errorbar(aes(code, ymax = 1, ymin = 1),
-                size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
+                size= 1, linetype = "longdash", inherit.aes = F, width = 1)+
   guides(fill = FALSE)+
-  ylim(0,8)+
-  theme_bw()
+  ylab("Rapport Fluo/Chla")+
+  xlab("Province de Longhurst")+
+  ylim(0,9)+
+  theme_bw(base_size = 20)+
+  ggtitle("Corrigé")
+
+ggplot(argo_mean)+
+  geom_col(aes(x = reorder(code, ratio2_fn1), y = ratio2_fn1, fill = code))+
+  geom_errorbar(aes(x = code, ymin = ratio2_fn1-ratio2_fn2, ymax = ratio2_fn1 + ratio2_fn2))+
+  scale_fill_brewer(palette = "Set1")+
+  geom_errorbar(aes(code, ymax = 1, ymin = 1),
+                size= 1, linetype = "longdash", inherit.aes = F, width = 1)+
+  guides(fill = FALSE)+
+  ylab("Rapport Fluo/Chla")+
+  xlab("Province de Longhurst")+
+  ylim(0,9)+
+  theme_bw(base_size = 20)+
+  ggtitle("Brut")
+
+grid.arrange(g2,g1, ncol = 1)
+
+#ggsave("argo/Plots/histo_calibre.png")
 
 argo_mean_roesler <- argo_calibration %>% mutate(ratio = chla_adjusted/tchla) %>% select(code, ratio) %>% 
   group_by(code) %>% 
@@ -134,8 +157,9 @@ ggplot(filter(argo_calibration, optical_layer < 4))+
   ylab("Concentration en Chla estimée")+xlab("Concentration en Chla mesurée")+
   theme_bw(base_size = 16)+
   coord_trans(x = "log", y = "log")
-  
-  #♣ggsave("argo/Plots/calibration.png")
+
+
+#ggsave("argo/Plots/calibration.png")
   
 g1 <- ggplot(filter(argo_calibration, optical_layer < 4))+
   geom_point(aes(x = tchla , y = chla_adjusted, colour = "fluo"), size = 1.5)+
@@ -163,7 +187,20 @@ a <- rmse(argo_calibration$tchla, argo_calibration$calibrate_fluo)
 b <- rmse(argo_calibration$tchla, argo_calibration$chla_adjusted)
 a/b
 
+library(ggtern)
+
+argo_calibration <- argo_calibration %>% mutate(ratio = chla_adjusted*2/tchla)
+
 ggplot(argo_calibration)+
   coord_tern()+
-  geom_point(aes(x= micro, y = nano, z = pico, colour = code))+
-  scale_color_brewer(palette = "Set1")
+  stat_interpolate_tern(geom = "polygon", formula = value~x+y,
+                        method = lm, n = 50,
+                        breaks = seq(0,7, by = 1),
+                        aes(x = micro, y = nano, z = pico, value = ratio, fill =..level..), expand = 1)+
+  geom_point(aes(x= micro, y = nano, z = pico, colour = code), size = 3)+
+  scale_color_brewer(palette = "Set1", name = "Province océanique")+
+  theme_bw(base_size = 20)+
+  weight_percent()+
+  scale_fill_gradient(name = "Rapport Fluo/Chla", low = "lightgrey", high = "gray45")
+
+ggsave("argo/Plots/ggtern.png")

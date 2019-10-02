@@ -19,3 +19,5 @@ merged_argo <- filter(merged_argo, !(lovbio %in% NAT_IRS_list))
 argo_data <- merged_argo %>%
   select(date:zze) %>% 
   rename("lat_float" = "lat.x", "lon_float" = "lon.x", "lat_hplc" = "lat.y", "lon_hplc" = "lon.y")
+
+write_csv(argo_data, "argo/Data/merged_data_argo_hplc")

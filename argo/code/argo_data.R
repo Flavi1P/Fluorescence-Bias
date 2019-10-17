@@ -104,7 +104,7 @@ nc_df <- nc_df %>% select(-down)
   argo_data <- bind_rows(argo_data, nc_df)
   }
   a <- a+1
-  #setTxtProgressBar(pb, a)
+  setTxtProgressBar(pb, a)
   nc_close(nc)
 }
 
@@ -121,12 +121,12 @@ subref <- subref[grep("lovbio", subref$lovbio),]
 ref <- ref[grep("lovbio", ref$lovbio),]
 no_date <-"first"
 
-hplc_data <- data.frame("depth" = NA, "lon" = NA, "lat" = NA, "date" = NA, "tchla" = NA, "fuco" = NA, "zea" = NA, "allo" = NA, "peri" = NA, "tchlb" = NA, "hex" = NA, "but" = NA, "id" = NA)
+hplc_data <- data.frame("depth" = NA, "lon" = NA, "lat" = NA, "date" = NA, "tchla" = NA, "fuco" = NA, "zea" = NA, "allo" = NA, "peri" = NA, "tchlb" = NA, "hex" = NA, "but" = NA, "diad" = NA, "id" = NA)
 
 for (i in ref$lovbio){
- hplc_name <- list.files(paste("Scripts/Data/IN_SITU", i, "PIGMENTS", sep = "/"))
+ hplc_name <- list.files(paste("Data/IN_SITU", i, "PIGMENTS", sep = "/"))
  hplc_name <- hplc_name[grep(".xls", hplc_name)]
- temp_pig <- read_excel(paste("Scripts/Data/IN_SITU", i, "PIGMENTS", hplc_name, sep = "/"))
+ temp_pig <- read_excel(paste("Data/IN_SITU", i, "PIGMENTS", hplc_name, sep = "/"))
  
  colnames(temp_pig) <- tolower(colnames(temp_pig))
  temp_pig <- data.frame(lapply(temp_pig, function(v) {
@@ -145,7 +145,8 @@ for (i in ref$lovbio){
                        "peri" = as.numeric(as.character(temp_pig[,grep("^peridinin",colnames(temp_pig))])),
                        "tchlb" = as.numeric(as.character(temp_pig[,grep("total.chlorophyll.b|tchlb$",colnames(temp_pig))])),
                        "hex" = as.numeric(as.character(temp_pig[,grep("hexanoyloxyfucoxanthin$",colnames(temp_pig))])),
-                       "but" = as.numeric(as.character(temp_pig[,grep("butanoyloxyfucoxanthin$",colnames(temp_pig))])))
+                       "but" = as.numeric(as.character(temp_pig[,grep("butanoyloxyfucoxanthin$",colnames(temp_pig))])),
+                       "diad" = as.numeric(as.character(temp_pig[,grep("diadinoxanthin$", colnames(temp_pig))])))
  pig_new$id <- rep(i, length(pig_new$depth))
  hplc_data <- rbind(hplc_data, pig_new)
  }
@@ -158,13 +159,9 @@ for (i in ref$lovbio){
 hplc_data <- hplc_data[-1,]
 hplc_data[is.na(hplc_data)] <- 0
 
+hplc_data[hplc_data < 0] <- NA
 
-
-hplc_positiv <- hplc_data
-hplc_positiv[hplc_positiv < 0] <- NA
-hplc_data <- bind_cols(select(hplc_data, -pigments, - tchla),select(hplc_positiv, pigments, tchla))
-
-hplc_mduf <- read_excel("Scripts/Data/IN_SITU/MOBYDICK_pigments_130718_.xlsx", 
+hplc_mduf <- read_excel("Data/IN_SITU/MOBYDICK_pigments_130718_.xlsx", 
                         col_types = c("numeric", "text", "numeric", 
                                       "numeric", "numeric", "date", "numeric", 
                                       "numeric", "numeric", "numeric", "numeric", 
@@ -186,12 +183,12 @@ hplc_mduf <- read_excel("Scripts/Data/IN_SITU/MOBYDICK_pigments_130718_.xlsx",
 
 
 hplc_mduf <- select(hplc_mduf, "Depth_(m)", Longitude, Latitude, "Sampling_date_(UTC)", "Ship", Fucoxanthin, Peridinin, "19-Hexanoyloxyfucoxanthin",
-                    "19-Butanoyloxyfucoxanthin", Alloxanthin, "Total_Chlb", Zeaxanthin, "Total_Chlorophyll_a")
-names(hplc_mduf) <- c("depth", "lon", "lat", "date", "id", "fuco", "peri", "hex", "but", "allo", "tchlb", "zea", "tchla")
+                    "19-Butanoyloxyfucoxanthin", Alloxanthin, "Total_Chlb", Zeaxanthin, "Total_Chlorophyll_a", Diadinoxanthin)
+names(hplc_mduf) <- c("depth", "lon", "lat", "date", "id", "fuco", "peri", "hex", "but", "allo", "tchlb", "zea", "tchla", "diad")
 hplc_mduf[is.na(hplc_mduf)] <- 0
-#write_csv(hplc_mduf, "Scripts/Data/argo/hplc_mduf")
+#write_csv(hplc_mduf, "Data/argo/hplc_mduf")
 
-hplc_tak <- read_excel("Scripts/Data/IN_SITU/GreenEdge-Amundsen-pigments_flotteurs-300117.xlsx", 
+hplc_tak <- read_excel("Data/IN_SITU/GreenEdge-Amundsen-pigments_flotteurs-300117.xlsx", 
                        col_types = c("numeric", "text", "text", 
                                      "text", "numeric", "numeric", "date", 
                                      "numeric", "numeric", "numeric", "numeric", 
@@ -214,12 +211,12 @@ hplc_tak <- read_excel("Scripts/Data/IN_SITU/GreenEdge-Amundsen-pigments_flotteu
                                      "numeric", "numeric", "numeric", "numeric"))
 
 hplc_tak <- select(hplc_tak, "Depth (m)", Longitude, Latitude, "Sampling date (UTC)", "Leg", Fucoxanthin, Peridinin, "19'-Hexanoyloxyfucoxanthin",
-                   "19'-Butanoyloxyfucoxanthin", Alloxanthin, "Chlorophyll b", Zeaxanthin, "Total Chlorophyll a")
-names(hplc_tak) <- c("depth", "lon", "lat", "date", "id", "fuco", "peri", "hex", "but", "allo", "tchlb", "zea", "tchla")
-#write_csv(hplc_tak, "Scripts/Data/hplc_tak")
+                   "19'-Butanoyloxyfucoxanthin", Alloxanthin, "Chlorophyll b", Zeaxanthin, "Total Chlorophyll a", Diadinoxanthin)
+names(hplc_tak) <- c("depth", "lon", "lat", "date", "id", "fuco", "peri", "hex", "but", "allo", "tchlb", "zea", "tchla", "diad")
+#write_csv(hplc_tak, "Data/hplc_tak")
 
 
-hplc_soclim <- read_excel("Scripts/Data/IN_SITU/SOCLIM2016_241017.xlsx", 
+hplc_soclim <- read_excel("Data/IN_SITU/SOCLIM2016_241017.xlsx", 
                           col_types = c("numeric", "numeric", "numeric", 
                                         "numeric", "date", "numeric", "text", 
                                         "text", "text", "text", "numeric", 
@@ -239,11 +236,11 @@ hplc_soclim <- read_excel("Scripts/Data/IN_SITU/SOCLIM2016_241017.xlsx",
                                         "numeric", "numeric", "numeric"))
 
 hplc_soclim <- select(hplc_soclim, "Depth (m)", Longitude, Latitude, "Sampling date (UTC)", "Station", Fucoxanthin, Peridinin, "19'-Hexanoyloxyfucoxanthin",
-                   "19'-Butanoyloxyfucoxanthin", Alloxanthin, "Chlorophyll b", Zeaxanthin, "Total Chlorophyll a")
+                   "19'-Butanoyloxyfucoxanthin", Alloxanthin, "Chlorophyll b", Zeaxanthin, "Total Chlorophyll a", Diadinoxanthin)
 
-names(hplc_soclim) <- c("depth", "lon", "lat", "date", "id", "fuco", "peri", "hex", "but", "allo", "tchlb", "zea", "tchla")
+names(hplc_soclim) <- c("depth", "lon", "lat", "date", "id", "fuco", "peri", "hex", "but", "allo", "tchlb", "zea", "tchla", "diad")
 
-#write_csv(hplc_soclim, "Scripts/Data/hplc_soclim")
+#write_csv(hplc_soclim, "Data/hplc_soclim")
 
 
 ggplot(hplc_data)+

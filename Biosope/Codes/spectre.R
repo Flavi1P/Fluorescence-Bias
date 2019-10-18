@@ -80,32 +80,3 @@ grid.arrange(gchla, gratio)
 #   geom_point(aes(y = protect), colour = "black")+
 #   xlim(0,1) + ylim(0,0.025)
 # 
-# boussole <- read_csv("Boussole/Data/boussole.csv")
-# 
-# boussole <- boussole %>% mutate(photo_440 = peri * spectre440$peri + but * spectre440$x19_bf + fuco * spectre440$fuco + allo * spectre440$allox + tchla * spectre440$chl_a,
-#                               protect_440 = zea * spectre440$zea,
-#                               photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + fuco * spectre470$fuco + allo * spectre470$allox + tchla * spectre470$chl_a,
-#                               protect_470 = zea * spectre470$zea, 
-#                               ratio_photo = photo_440/fluo,
-#                               ratio_protect = protect_440/fluo)
-# 
-# ggplot(filter(boussole, depth < 20), aes(y = fluo))+
-#   geom_point(aes(x = photo_440), colour = "green")
-# 
-# ggplot(filter(boussole, depth < 20))+
-#   geom_point(aes(x = date, y = ratio_photo))+
-#   geom_point(aes(x = date, y = zea), colour = "red")
-# 
-# ggplot(filter(boussole, depth < 20))+
-#   geom_point(aes(x = date, y = ratio_photo))
-# 
-# 
-# boussole$year <- year(boussole$date)
-# 
-# ggplot(filter(boussole, depth < 15))+
-#   geom_point(aes(x = date, y = photo_440/photo_470))+
-#   facet_wrap(facets = "year", ncol = 1, scales = "free_x")+
-#   ylab("Rapport Absorbance/Fluo")
-# 
-# ggplot(filter(boussole, depth < 20))+
-#   geom_point(aes(x = date, y = ratio_protect))

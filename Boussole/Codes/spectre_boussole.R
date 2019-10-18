@@ -56,6 +56,11 @@ interp_values <- interpolate(boussole_mean$date, boussole_mean$ratio, date_new, 
 #create a df on the new scale with new values
 boussole_ts <- data.frame("date" = date_new, "ratio" = interp_values)
 
+boussole_ts$year <- year(boussole_ts$date)
+
+ratio_time <- ggplot(boussole_ts)+
+  geom_path(aes(x = date, y = ratio))+
+  facet_wrap(.~year, ncol = 1, scales = "free")
 #create a ts object
 boussole_ts <- ts(boussole_ts$ratio)
 
@@ -80,19 +85,16 @@ pigment_ts <- boussole_mean %>% select(date, fuco, peri, hex, but, allo, tchla)%
   summarise_all(mean) %>% 
   ungroup() 
 
+#change the format to allowed a visualisatio with geom_bar
 pigment_ts <- gather(pigment_ts, key = "pigment", value = "concentration", 3:8)
 
-ggplot(filter(pigment_ts, pigment != "tchla"))+
+#plot the variation of different pigments along the years
+pigment_time <- ggplot(filter(pigment_ts, pigment != "tchla"))+
   geom_bar(aes(x = month, y = concentration, fill = pigment), stat = "identity", position = "fill")+
   scale_fill_brewer(palette = "Set3")+
-  theme_dark()
-#sum all pigments peer month and year   
+  theme_dark()+
+  facet_wrap(. ~ year, ncol = 1)
 
-autoplot(pigment_ts, ts.geom = "bar", facet = FALSE, fill = TRUE, stack = TRUE)
+#compare the variation of pigments with the variation of the ratio
+grid.arrange(ratio_time, pigment_time, ncol = 2)
 
-
-# %>% 
-#  gather(key = "pigment", value = "concentration", 2:7)
-
-#normalise the concentration of each pigment with the total concentration of all pigment per month
-pigment_ts <- pigment_ts 

@@ -22,7 +22,7 @@ names(boussole_2014) <- c("btle", "date", "press", "fluo", "depth", "fluo_volt",
 
 hplc_boussole_2014 <- filter(hplc, Project == "Boussole" & Year == "2014")
 names(hplc_boussole_2014) <- tolower(colnames(hplc_boussole_2014))
-hplc_boussole_2014 <- hplc_boussole_2014 %>% mutate(date = as_date(paste(year, month, day, sep = "-"))) %>% select(date, depth, bottle_number, pigments, tchla, phytinea)
+hplc_boussole_2014 <- hplc_boussole_2014 %>% mutate(date = as_date(paste(year, month, day, sep = "-"))) %>% select(date, depth, bottle_number, pigments, dvchla, chla, tchla, phytinea)
 
 hplc_boussole_2014$bottle_number <- as.numeric(hplc_boussole_2014$bottle_number)
 boussole_2014 <- left_join(boussole_2014, hplc_boussole_2014, by = c("date", "btle" = "bottle_number", "depth"))
@@ -43,7 +43,7 @@ names(boussole_2015) <- c("btle", "date", "press", "fluo", "depth", "fluo_volt",
 
 hplc_boussole_2015 <- filter(hplc, Project == "Boussole" & Year == "2015")
 names(hplc_boussole_2015) <- tolower(colnames(hplc_boussole_2015))
-hplc_boussole_2015 <- hplc_boussole_2015 %>% mutate(date = as_date(paste(year, month, day, sep = "-"))) %>% select(date, depth, bottle_number, pigments, tchla, phytinea)
+hplc_boussole_2015 <- hplc_boussole_2015 %>% mutate(date = as_date(paste(year, month, day, sep = "-"))) %>% select(date, depth, bottle_number, pigments, dvchla, chla, tchla, phytinea)
 
 hplc_boussole_2015$bottle_number <- as.numeric(hplc_boussole_2015$bottle_number)
 boussole_2015 <- left_join(boussole_2015, hplc_boussole_2015, by = c("date", "btle" = "bottle_number", "depth"))
@@ -63,7 +63,7 @@ names(boussole_2013) <- c("btle", "date", "press", "fluo", "depth", "fluo_volt",
 
 hplc_boussole_2013 <- filter(hplc, Project == "Boussole" & Year == "2013")
 names(hplc_boussole_2013) <- tolower(colnames(hplc_boussole_2013))
-hplc_boussole_2013 <- hplc_boussole_2013 %>% mutate(date = as_date(paste(year, month, day, sep = "-"))) %>% select(date, depth, bottle_number, pigments, tchla, phytinea)
+hplc_boussole_2013 <- hplc_boussole_2013 %>% mutate(date = as_date(paste(year, month, day, sep = "-"))) %>% select(date, depth, bottle_number, pigments, dvchla, chla, tchla, phytinea)
 
 hplc_boussole_2013$bottle_number <- as.numeric(hplc_boussole_2013$bottle_number)
 boussole_2013 <- left_join(boussole_2013, hplc_boussole_2013, by = c("date", "btle" = "bottle_number", "depth"))
@@ -75,6 +75,7 @@ rm(hplc_boussole_2013, hplc_boussole_2014, hplc_boussole_2015, hplc, boussole_20
 
 #add ze####
 a <- 1
+boussole$profile <- NA
 for (i in c(2 : length(boussole$date))){
   boussole$profile[i] <- ifelse(boussole$date[i] == boussole$date[i-1], a, a+1)
   a <- ifelse(boussole$date[i] == boussole$date[i-1], a, a+1)
@@ -82,7 +83,7 @@ for (i in c(2 : length(boussole$date))){
 boussole$profile[1] <- 1
 
 boussole <- filter(boussole, tchla != "NA")
-momadata <- filter(boussole, profile %in% which(table(momadata$profile) > 1)) %>%  select(depth, tchla, profile)
+momadata <- filter(boussole, profile %in% which(table(boussole$profile) > 1)) %>%  select(depth, tchla, profile)
 momadata$ze <- NA
 for (i in momadata$profile){
   dat <- filter(momadata, profile == i)

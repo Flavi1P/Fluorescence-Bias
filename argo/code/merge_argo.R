@@ -9,8 +9,8 @@ library(lubridate)
 library(nnls)
 library(Metrics)
 library(gridExtra)
-source("functions/profile_numb.r")
-source("functions/zeu_moma.r")
+source("functions/profile_numb.R")
+source("functions/zeu_moma.R")
 source("functions/phi_lm.R")
 source("functions/phi_stat.R")
 source("functions/phi_boot.R")
@@ -330,7 +330,7 @@ table(merged_argo$optical_layer)
 
 
 
-write_csv(merged_argo, "Data/merged_argo")
+#write_csv(merged_argo, "Data/merged_argo")
 
 
 

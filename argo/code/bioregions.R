@@ -7,6 +7,7 @@ library(gridExtra)
 library(grid)
 library(nnls)
 library(FactoMineR)
+library(janitor)
 path = "Data/Longhurst"
 argo <- read_csv("Data/merged_argo")
 source("functions/outliers.R")
@@ -50,9 +51,7 @@ ggplot(argo)+
 
 argo <- filter(argo, optical_layer < 4)
 
-influential <- outliers(select(argo, fluo, tchla, micro, nano, pico))
 
-argo <- argo[-influential,]
 
 nbr_match_region<- count(argo, "code")
 nbr_float_region <- argo %>% filter(duplicated(lovbio) == FALSE) %>% count("code")
@@ -63,6 +62,10 @@ names(resume_region) <- c("code", "nbr_of_float", "nbr_of_match")
 
 argo <- argo %>% mutate(fluo = chla_adjusted * 2,
                         ratio = fluo/tchla)
+
+influential <- outliers(select(argo, fluo, tchla, micro, nano, pico))
+
+argo <- argo[-influential,]
 
 phi_multiple <- argo %>% group_by(code) %>% phi_simple("fluo")
 
@@ -94,94 +97,136 @@ g1 <- ggplot(region_argo)+
   ylim(0,9)
 g1  
 
+#compute the absorbance ratio
 
+#open pigments absorbtion
+spectre <- read_excel("Biosope/Data/Spectres_annick.xlsx")
+spectre <- clean_names(spectre)
 
-#AFC####
-afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.y, lat.y))
-afc_table <- filter(afc_table, code != "ANTA")
+#select the absorbtion at 440 and 470nm
+spectre440<- filter(spectre, lambda == 440)
+spectre470 <- filter(spectre, lambda == 470)
 
-afc_argo <- cca(na.omit(select(afc_table, pigments)))
-test <- envfit(afc_argo, select(afc_table, micro, nano, pico, ratio))
+#create columns that correspond to the total photosynthetic absorbance and non photosynthetic absorbance at 440 and 470. Create also a ratio between the two photosynthetic absorbtion
+argo<- argo %>% mutate(photo_440 = peri * spectre440$peri + but * spectre440$x19_bf + hex * spectre440$x19_hf + fuco * spectre440$fuco + allo * spectre440$allox + tchla * spectre440$chl_a,
+                              protect_440 = zea * spectre440$zea,
+                              photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + tchla * spectre470$chl_a,
+                              protect_470 = zea * spectre470$zea, 
+                              ratio_abs = photo_440/photo_470)
 
-env_arrow <- as.data.frame(test$vectors$arrows) #On récupère les donnes du modele sur les variables environnementales
+#resume it by region
+region_argo_absorbance <- argo  %>% group_by(code) %>% summarise_at(vars(ratio_abs), c(mean, sd), na.rm = TRUE) %>% ungroup()
+names(region_argo_absorbance) <- c("code", "mean", "sd")
 
-argo_score <- as.data.frame(scores(afc_argo, choices = c(1,2,3,4,5), display = c("site"))) #this is a dataframe with the score on the 5 axes of each sample
+region_argo_absorbance <- filter(region_argo_absorbance, code != "ANTA")#delete this region because we only have 1 observation
 
-afc_table <- bind_cols(afc_table, argo_score)
+#plot
 
-pig_score <- as.data.frame(scores(afc_argo, choices = c(1,2,3,4,5), display = c("species")))
+gabs <- ggplot(region_argo_absorbance)+
+  geom_col(aes(x = reorder(region_argo$code, region_argo$mean), y = mean, fill = code))+
+  geom_errorbar(aes(x = code, ymin = mean - sd, ymax = mean + sd))+
+  xlab("Province océanique")+
+  ylab("Rapport a440/a470")+
+  guides(fill = FALSE)+
+  scale_fill_brewer(palette = "Set1")+
+  theme_bw(base_size = 20)
 
+grid.arrange(g1, gabs, ncol = 1)
 
-ggplot()+
-  geom_point(aes(x = CA1, y = CA2, colour = code), size = 2, data = afc_table)+
-  geom_segment(aes(x = 0, xend = CA1 *1.5, y = 0, yend = CA2*1.5), data = pig_score)+
-  geom_text_repel(aes(x = CA1*1.5, y = CA2*1.5, label = rownames(pig_score)), data = pig_score)+
-  geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = env_arrow, colour = "#33a02c")+
-  geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(env_arrow), fontface = 2), data = env_arrow)+
-  scale_color_brewer(palette = "Set1") + coord_equal() +
-  guides(colour = FALSE)+
-  theme_bw()
+ggplot(argo)+
+  geom_point(aes(x = ratio, y = ratio_abs, colour = code))+
+  xlab("rapport fluo/[tchla]")+
+  ylab("rapport a440/a470")+
+  ylim(1,5)+
+  xlim(0,10)+
+  theme_minimal()
 
-g2
-grid.arrange(g1,g2, ncol = 2)
-
-g3 <- ggplot(afc_table)+
-  geom_point(aes(x = lon.y, y = lat.y, fill = code), pch = 21, colour = "black", size = 4)+
-  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
-  xlab("Longitude (°E)")+ylab("Latitude (°N)")+
-  coord_quickmap()+
-  scale_fill_brewer(palette = "Set1", name = "Province océanique", labels = c("Archipelagos", "Arctique Atlantique", "Boréal Polaire", "Méditerranée", "Courant Circumpolaire Antarctique", "Atlantique Subarctique", "Gyre Subtropical Pacifique Sud"))+
-  guides("fill" = FALSE)+
-  theme_bw(base_size = 18)
-
-g3
-
-#ggsave("argo/Plots/map_simple.png")
-
-grid.newpage()
-pushViewport(viewport(layout = grid.layout(2,2)))
-define_region <- function(row, col){
-  viewport(layout.pos.row = row, layout.pos.col = col)
-}
-print(g1, vp = define_region(1,1))
-print(g2, vp = define_region(1:2, 2))
-print(g3, vp = define_region(2,1))
-
-png(file = "argo/Plots/barplot_map.png", width = 8.25, height = 7.73, units = "in", res = 100)
-grid.arrange(g3,g1)
-dev.off()
-
-#DCA####
-
-AFC_detrend <- decorana(select(afc_table, pigments))
-AFC_detrend
-
-scores_detrend <- data.frame(scores(AFC_detrend, choices = c(1,2,3), display = "site"))
-afc_table <- bind_cols(afc_table, scores_detrend)
-
-pigscore_detrend <- data.frame(scores(AFC_detrend, choices = c(1,2,3), display = "species"))
-
-fitscore_detrend <- envfit(AFC_detrend, select(afc_table, micro, nano, pico, ratio))
-fitarrow_detrend <- as.data.frame(fitscore_detrend$vectors$arrows)
-
-
-
-ggplot(afc_table)+
-  geom_point(aes(x = DCA1, y = DCA2, colour = code), size = 3)+
-  geom_segment(aes(x = 0, xend = DCA1 * 3/4, y = 0, yend = DCA2 *3/4), data = pigscore_detrend)+
-  geom_text(aes(x = DCA1 * 3/4, y = DCA2 * 3/4, label = rownames(pigscore_detrend)), data = pigscore_detrend, size = 6)+
-  geom_segment(aes(x = 0, y = 0, xend = DCA1, yend = DCA2), data = fitarrow_detrend, colour = "#33a02c", size = 1)+
-  geom_text(aes(x = DCA1, y = DCA2, label=rownames(fitarrow_detrend), fontface = 2), data = fitarrow_detrend, size = 7)+
-  scale_color_brewer(name = "Code", palette = "Set1")+
-  coord_equal()+
-  xlab("DCA1 47%")+ylab("DCA2 7%")+
-#  ggtitle("Detrend Correspondance analysis on Argo HPLC data")+
-  theme_bw(base_size = 16)
-ggsave("argo/Plots/DCA.png")
-
-fit1 <- lm(ratio~microfluo + nanofluo + picofluo, data =argo)
-plot(fit1)
-summary(fit1)
+# #AFC####
+# afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.y, lat.y))
+# afc_table <- filter(afc_table, code != "ANTA")
+# 
+# afc_argo <- cca(na.omit(select(afc_table, pigments)))
+# test <- envfit(afc_argo, select(afc_table, micro, nano, pico, ratio))
+# 
+# env_arrow <- as.data.frame(test$vectors$arrows) #On récupère les donnes du modele sur les variables environnementales
+# 
+# argo_score <- as.data.frame(scores(afc_argo, choices = c(1,2,3,4,5), display = c("site"))) #this is a dataframe with the score on the 5 axes of each sample
+# 
+# afc_table <- bind_cols(afc_table, argo_score)
+# 
+# pig_score <- as.data.frame(scores(afc_argo, choices = c(1,2,3,4,5), display = c("species")))
+# 
+# 
+# ggplot()+
+#   geom_point(aes(x = CA1, y = CA2, colour = code), size = 2, data = afc_table)+
+#   geom_segment(aes(x = 0, xend = CA1 *1.5, y = 0, yend = CA2*1.5), data = pig_score)+
+#   geom_text_repel(aes(x = CA1*1.5, y = CA2*1.5, label = rownames(pig_score)), data = pig_score)+
+#   geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = env_arrow, colour = "#33a02c")+
+#   geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(env_arrow), fontface = 2), data = env_arrow)+
+#   scale_color_brewer(palette = "Set1") + coord_equal() +
+#   guides(colour = FALSE)+
+#   theme_bw()
+# 
+# g2
+# grid.arrange(g1,g2, ncol = 2)
+# 
+# g3 <- ggplot(afc_table)+
+#   geom_point(aes(x = lon.y, y = lat.y, fill = code), pch = 21, colour = "black", size = 4)+
+#   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
+#   xlab("Longitude (°E)")+ylab("Latitude (°N)")+
+#   coord_quickmap()+
+#   scale_fill_brewer(palette = "Set1", name = "Province océanique", labels = c("Archipelagos", "Arctique Atlantique", "Boréal Polaire", "Méditerranée", "Courant Circumpolaire Antarctique", "Atlantique Subarctique", "Gyre Subtropical Pacifique Sud"))+
+#   guides("fill" = FALSE)+
+#   theme_bw(base_size = 18)
+# 
+# g3
+# 
+# #ggsave("argo/Plots/map_simple.png")
+# 
+# grid.newpage()
+# pushViewport(viewport(layout = grid.layout(2,2)))
+# define_region <- function(row, col){
+#   viewport(layout.pos.row = row, layout.pos.col = col)
+# }
+# print(g1, vp = define_region(1,1))
+# print(g2, vp = define_region(1:2, 2))
+# print(g3, vp = define_region(2,1))
+# 
+# png(file = "argo/Plots/barplot_map.png", width = 8.25, height = 7.73, units = "in", res = 100)
+# grid.arrange(g3,g1)
+# dev.off()
+# 
+# #DCA####
+# 
+# AFC_detrend <- decorana(select(afc_table, pigments))
+# AFC_detrend
+# 
+# scores_detrend <- data.frame(scores(AFC_detrend, choices = c(1,2,3), display = "site"))
+# afc_table <- bind_cols(afc_table, scores_detrend)
+# 
+# pigscore_detrend <- data.frame(scores(AFC_detrend, choices = c(1,2,3), display = "species"))
+# 
+# fitscore_detrend <- envfit(AFC_detrend, select(afc_table, micro, nano, pico, ratio))
+# fitarrow_detrend <- as.data.frame(fitscore_detrend$vectors$arrows)
+# 
+# 
+# 
+# ggplot(afc_table)+
+#   geom_point(aes(x = DCA1, y = DCA2, colour = code), size = 3)+
+#   geom_segment(aes(x = 0, xend = DCA1 * 3/4, y = 0, yend = DCA2 *3/4), data = pigscore_detrend)+
+#   geom_text(aes(x = DCA1 * 3/4, y = DCA2 * 3/4, label = rownames(pigscore_detrend)), data = pigscore_detrend, size = 6)+
+#   geom_segment(aes(x = 0, y = 0, xend = DCA1, yend = DCA2), data = fitarrow_detrend, colour = "#33a02c", size = 1)+
+#   geom_text(aes(x = DCA1, y = DCA2, label=rownames(fitarrow_detrend), fontface = 2), data = fitarrow_detrend, size = 7)+
+#   scale_color_brewer(name = "Code", palette = "Set1")+
+#   coord_equal()+
+#   xlab("DCA1 47%")+ylab("DCA2 7%")+
+# #  ggtitle("Detrend Correspondance analysis on Argo HPLC data")+
+#   theme_bw(base_size = 16)
+# ggsave("argo/Plots/DCA.png")
+# 
+# fit1 <- lm(ratio~microfluo + nanofluo + picofluo, data =argo)
+# plot(fit1)
+# summary(fit1)
 
 #### phi global part (optional), phi global = fluorescent yield of the community
 # 

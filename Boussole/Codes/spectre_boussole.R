@@ -2,6 +2,9 @@ library(tidyverse)
 library(ggfortify)
 library(castr)
 library(stlplus)
+library(janitor)
+library(gridExtra)
+library(lubridate)
 
 #open boussole data
 boussole <- read_csv("Boussole/Data/boussole.csv")
@@ -15,9 +18,9 @@ spectre440<- filter(spectre, lambda == 440)
 spectre470 <- filter(spectre, lambda == 470)
 
 #create columns that correspond to the total photosynthetic absorbance and non photosynthetic absorbance at 440 and 470. Create also a ratio between the two photosynthetic absorbtion
-boussole <- boussole %>% mutate(photo_440 = peri * spectre440$peri + but * spectre440$x19_bf + hex * spectre440$x19_hf + fuco * spectre440$fuco + allo * spectre440$allox + tchla * spectre440$chl_a,
+boussole <- boussole %>% mutate(photo_440 = peri * spectre440$peri + but * spectre440$x19_bf + hex * spectre440$x19_hf + fuco * spectre440$fuco + allo * spectre440$allox + dvchla * spectre440$dv_chla + chla * spectre440$chl_a,
                               protect_440 = zea * spectre440$zea,
-                              photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + tchla * spectre470$chl_a,
+                              photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + dvchla * spectre440$dv_chla + chla * spectre440$chl_a,
                               protect_470 = zea * spectre470$zea,
                               ratio = photo_440/photo_470)
 
@@ -78,7 +81,7 @@ plot(boussole_stl, scales = list(y = "free"))
 #Now we try to see the variability of pigments composition
 
 #Create a df with the date and pigment concentration per month at the surface
-pigment_ts <- boussole_mean %>% select(date, fuco, peri, hex, but, allo, tchla)%>% 
+pigment_ts <- boussole_mean %>% select(date, fuco, peri, hex, but, allo, dvchla, chla)%>% 
   mutate(month = month(date), year = year(date)) %>%
   group_by(month, year) %>% 
   select(-date) %>% 
@@ -86,7 +89,7 @@ pigment_ts <- boussole_mean %>% select(date, fuco, peri, hex, but, allo, tchla)%
   ungroup() 
 
 #change the format to allowed a visualisatio with geom_bar
-pigment_ts <- gather(pigment_ts, key = "pigment", value = "concentration", 3:8)
+pigment_ts <- gather(pigment_ts, key = "pigment", value = "concentration", 3:9)
 
 #plot the variation of different pigments along the years
 pigment_time <- ggplot(filter(pigment_ts, pigment != "tchla"))+
@@ -98,3 +101,9 @@ pigment_time <- ggplot(filter(pigment_ts, pigment != "tchla"))+
 #compare the variation of pigments with the variation of the ratio
 grid.arrange(ratio_time, pigment_time, ncol = 2)
 
+#plot the ratio a440/a470 vs fluo/chla
+
+ggplot(boussole)+
+  geom_point(aes(x = fluo, y = tchla))+
+  xlim(0,1.25)+
+  ylim(0,2.5)

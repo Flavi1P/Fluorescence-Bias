@@ -108,22 +108,26 @@ nc_df <- nc_df %>% select(-down)
   nc_close(nc)
 }
 
-write_csv(argo_data, "Data/argo/first_profiles")
-write_csv(refbis, "Scripts/Data/argo/ref_bis")
+#write_csv(argo_data, "Data/argo/first_profiles")
+#write_csv(refbis, "Scripts/Data/argo/ref_bis")
 
-ggplot(profile_shit)+
-  geom_path(aes(x = chla, y = -pres, colour = "chla"))+
-  ylim(-45,0)
 
-which(duplicated(merged$tchla))
 
-subref <- subref[grep("lovbio", subref$lovbio),]
-ref <- ref[grep("lovbio", ref$lovbio),]
-no_date <-"first"
+# which(duplicated(merged$tchla))
+# 
+# subref <- subref[grep("lovbio", subref$lovbio),]
+# ref <- ref[grep("lovbio", ref$lovbio),]
+# no_date <-"first"
 
 hplc_data <- data.frame("depth" = NA, "lon" = NA, "lat" = NA, "date" = NA, "tchla" = NA, "fuco" = NA, "zea" = NA, "allo" = NA, "peri" = NA, "tchlb" = NA, "hex" = NA, "but" = NA, "diad" = NA, "id" = NA)
 
-for (i in ref$lovbio){
+#I remove tak from the ref to avoid conflict in the next loop that has not been design to take in charge that kind of files
+ref_lov <- ref[-grep("^tak", ref$lovbio),]
+ref_lov <- filter(ref_lov, !(lovbio %in% refbis$lovbio))
+
+no_date <- c()
+
+for (i in ref_lov$lovbio){
  hplc_name <- list.files(paste("Data/IN_SITU", i, "PIGMENTS", sep = "/"))
  hplc_name <- hplc_name[grep(".xls", hplc_name)]
  temp_pig <- read_excel(paste("Data/IN_SITU", i, "PIGMENTS", hplc_name, sep = "/"))
@@ -279,13 +283,13 @@ hplc_data <- left_join(hplc_data, ref, by = c("id" = "lovbio"))
 
 
 
-map_vec <- read_csv("Scripts/Data/map_vec")
-ggplot(hplc_data)+
+map_vec <- read_csv("Data/map_vec")
+ggplot(hplc_mduf)+
   geom_point(aes(x = lon, y = lat, colour = id))+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
   coord_quickmap()
 
-write_csv(hplc_data, path = "Scripts/Data/argo/hplc_argo")
+#write_csv(hplc_data, path = "Scripts/Data/argo/hplc_argo")
 ncfile <- nc
 Var <- "CHLA"
 ExtractVar <- function(Var,FloatInfo){

@@ -65,7 +65,17 @@ argo <- argo %>% mutate(fluo = chla_adjusted * 2,
 
 influential <- outliers(select(argo, fluo, tchla, micro, nano, pico))
 
-argo <- argo[-influential,]
+#argo <- argo[-influential,]
+
+#lets mean the 7 profile of sarc because they all correspond to the same launch
+
+sarc <- argo %>% filter(code == "SARC") %>% group_by(depth) %>% summarise_all(mean) %>% ungroup()
+sarc$code <- "SARC"
+sarc$lovbio <- "lovbio_sarc"
+
+argo <- argo %>% filter(code != "SARC")
+argo <- bind_rows(argo, sarc)
+
 
 phi_multiple <- argo %>% group_by(code) %>% phi_simple("fluo")
 
@@ -90,7 +100,6 @@ g1 <- ggplot(region_argo)+
   ylab("Rapport Fluo/Chla")+
   geom_errorbar(aes(code, ymax = 1, ymin = 1),
                 size=1, linetype = "longdash", inherit.aes = F, width = 1)+
-  geom_text(aes(x = code, y = mean + sd + 0.5, label = nbr_of_float))+
   guides(fill = FALSE)+
   scale_fill_brewer(palette = "Set1")+
   theme_bw(base_size = 20)+
@@ -141,6 +150,16 @@ ggplot(argo)+
   xlim(0,10)+
   theme_minimal()
 
+pigment_region <- argo %>% group_by(code) %>%
+  summarise_at(vars(peri, but, hex, fuco, allo, tchla), mean) %>% ungroup() %>% 
+  gather(2:7, key = "pigment", value = "concentration")
+
+g_pig <- ggplot(filter(pigment_region, pigment != "tchla"))+
+  geom_col(aes(x = code, y = concentration, fill = pigment), position = "Fill")+
+  scale_fill_brewer(palette = "Set1")+
+  theme_bw(base_size = 20)
+
+grid.arrange(g1, g_pig, ncol = 1)
 # #AFC####
 # afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.y, lat.y))
 # afc_table <- filter(afc_table, code != "ANTA")

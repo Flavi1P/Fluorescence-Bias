@@ -198,14 +198,14 @@ position_tak <- cbind(hplc_tak$lon, hplc_tak$lat)
 tak_profiles <- first_profiles[grep("takapm", first_profiles$lovbio),]
 
 
-merged_dist2 <- data.frame(matrix(ncol = 27, nrow = 0))
+merged_dist2 <- data.frame(matrix(ncol = 28, nrow = 0))
 
 for (i in unique(tak_profiles$lovbio)){
   t <- filter(tak_profiles, lovbio == i)
   t_position <- cbind(rep(unique(t$lon), length(position_tak[,1])),  rep(unique(t$lat), length(position_tak[,1])))
   distance <- distHaversine(position_tak, t_position)
-  tak_lonround <- hplc_tak$lon_round[which(distance == min(distance))]
-  tak_latround <- hplc_tak$lat_round[which(distance == min(distance))]
+  tak_lonround <- unique(hplc_tak$lon_round[which(distance == min(distance))])
+  tak_latround <- unique(hplc_tak$lat_round[which(distance == min(distance))])
   t2 <- filter(hplc_tak, lon_round == tak_lonround & lat_round == tak_latround)
   merged_t <- left_join(t2,t, by = c("depth"))
   names(merged_dist2) <- colnames(merged_t)
@@ -289,7 +289,7 @@ ggplot(merged_full)+
 table(merged_full$profile)
 
 
-momadata <- merged_full %>% filter(lovbio != "lovapm002a" & profile != 31) %>% select(depth, tchla, profile, lovbio)
+momadata <- merged_full %>% filter(lovbio != "lovapm002a" & profile != 27) %>% select(depth, tchla, profile, lovbio)
 momadata <- na.omit(momadata)
 
 

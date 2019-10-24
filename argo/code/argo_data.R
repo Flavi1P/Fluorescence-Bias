@@ -46,6 +46,7 @@ first_profiles[which(first_profiles == "Data/argo/MR6901517_001.nc")] <- "Data/a
 first_profiles[which(first_profiles == "Data/argo/MR6901518_001.nc")] <- "Data/argo/MR6901518_001D.nc"
 first_profiles[which(first_profiles == "Data/argo/MR6901519_001.nc")] <- "Data/argo/MR6901519_001D.nc"
 first_profiles[which(first_profiles == "Data/argo/MR6901520_001.nc")] <- "Data/argo/MR6901520_001D.nc"
+first_profiles[which(first_profiles == "Data/argo/MR6901656_001.nc")] <- "Data/argo/MR6901656_001D.nc"
 first_profiles[which(first_profiles == "Data/argo/MR6902742_001.nc")] <- "Data/argo/MR6902742_002.nc"
 
 a <- 1
@@ -130,10 +131,6 @@ nc_df <- nc_df %>% select(-down)
 #write_csv(argo_data, "Data/argo/first_profiles")
 #write_csv(refbis, "Scripts/Data/argo/ref_bis")
 
-sarc <- filter(argo_data, id %in% c(6901514:6901520))
-ggplot(sarc)+
-  geom_path(aes(x = chla_adjusted, y = -pres, group = id, colour = id))+
-  ylim(-1000,0)
 
 # which(duplicated(merged$tchla))
 # 

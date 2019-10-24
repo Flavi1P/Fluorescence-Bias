@@ -3,12 +3,24 @@ library(tidyverse)
 library(readxl)
 library(lubridate)
 library(plyr)
+  
 
-
-#download.file("ftp://ftp.ifremer.fr/ifremer/argo/argo_bio-profile_index.txt",
-#              "argo/Data/index_bio.txt", quiet = FALSE, mode = "w",
-#              cacheOK = TRUE) 
+#download.file("ftp://ftp.ifremer.fr/ifremer/argo/argo_merge-profile_index.txt","argo/Data/index_merge.txt", quiet = FALSE, mode = "w",cacheOK = TRUE) 
 #biofiles <- read_csv("argo/Data/index_bio.txt", skip = 7)
+# 
+# index_ifremer<-read.table("argo/Data/index_merge.txt", skip=9, sep = ",")
+# files<-as.character(index_ifremer[,1])
+# ident<-strsplit(files,"/")
+# ident<-matrix(unlist(ident), ncol=4, byrow=TRUE)
+# dac<-ident[,1]
+# wod<-ident[,2]
+# prof_id<-ident[,4]
+# variables<-as.character(index_ifremer[,8])
+# lat<-index_ifremer[,3]
+# lon<-index_ifremer[,4]
+# time_all<-as.character(paste(index_ifremer$V2))
+
+
 profiles <- list.files("Data/argo", full.names = TRUE)
 profile_names <- list.files("Data/argo")
 profiles <- profiles[grep(pattern = "^[M][R]", profile_names)]
@@ -24,9 +36,16 @@ ref <- filter(ref, number != 6901526)
 argo_data <- data.frame("date" = NA, "lat" = NA, "lon" = NA, "pres" = NA, "temp" = NA,
                      "chla" = NA, "chla_qc" = NA, "chla_adjusted" = NA, "chla_adjusted_qc" = NA, "id"= NA)
 
-first_profiles <- paste("Data/argo", "/MR", unique(ref$number), "_001D.nc", sep = "")
+first_profiles <- paste("Data/argo", "/MR", unique(ref$number), "_001.nc", sep = "")
 first_profiles[which(first_profiles == "Data/argo/MR6901521_001.nc")] <- "Data/argo/MR6901521_001D.nc"
 first_profiles[which(first_profiles == "Data/argo/MR6901524_001.nc")] <- "Data/argo/MR6901524_001D.nc"
+first_profiles[which(first_profiles == "Data/argo/MR6901514_001.nc")] <- "Data/argo/MR6901514_001D.nc"
+first_profiles[which(first_profiles == "Data/argo/MR6901515_001.nc")] <- "Data/argo/MR6901515_001D.nc"
+first_profiles[which(first_profiles == "Data/argo/MR6901516_001.nc")] <- "Data/argo/MR6901516_001D.nc"
+first_profiles[which(first_profiles == "Data/argo/MR6901517_001.nc")] <- "Data/argo/MR6901517_001D.nc"
+first_profiles[which(first_profiles == "Data/argo/MR6901518_001.nc")] <- "Data/argo/MR6901518_001D.nc"
+first_profiles[which(first_profiles == "Data/argo/MR6901519_001.nc")] <- "Data/argo/MR6901519_001D.nc"
+first_profiles[which(first_profiles == "Data/argo/MR6901520_001.nc")] <- "Data/argo/MR6901520_001D.nc"
 first_profiles[which(first_profiles == "Data/argo/MR6902742_001.nc")] <- "Data/argo/MR6902742_002.nc"
 
 a <- 1
@@ -77,7 +96,7 @@ for(i in first_profiles){
   
   chla_adjusted_qc <- ncvar_get(nc,"CHLA_ADJUSTED_QC")
   chla_adjusted_qctab  <- llply(chla_adjusted_qc,function(qcstring){
-    as.numeric(unlist(strsplit(qcstring,split="")))flu
+    as.numeric(unlist(strsplit(qcstring,split="")))
   })
   chla_adjusted_qctab <- do.call(cbind,chla_adjusted_qctab)
   chla_adjusted_qc <- chla_adjusted_qctab[,p]
@@ -113,7 +132,8 @@ nc_df <- nc_df %>% select(-down)
 
 sarc <- filter(argo_data, id %in% c(6901514:6901520))
 ggplot(sarc)+
-  geom_path(aes(x = chla_adjusted, y = -pres, group = id, colour = id))
+  geom_path(aes(x = chla_adjusted, y = -pres, group = id, colour = id))+
+  ylim(-1000,0)
 
 # which(duplicated(merged$tchla))
 # 

@@ -24,7 +24,7 @@ ref <- filter(ref, number != 6901526)
 argo_data <- data.frame("date" = NA, "lat" = NA, "lon" = NA, "pres" = NA, "temp" = NA,
                      "chla" = NA, "chla_qc" = NA, "chla_adjusted" = NA, "chla_adjusted_qc" = NA, "id"= NA)
 
-first_profiles <- paste("Data/argo", "/MR", unique(ref$number), "_001.nc", sep = "")
+first_profiles <- paste("Data/argo", "/MR", unique(ref$number), "_001D.nc", sep = "")
 first_profiles[which(first_profiles == "Data/argo/MR6901521_001.nc")] <- "Data/argo/MR6901521_001D.nc"
 first_profiles[which(first_profiles == "Data/argo/MR6901524_001.nc")] <- "Data/argo/MR6901524_001D.nc"
 first_profiles[which(first_profiles == "Data/argo/MR6902742_001.nc")] <- "Data/argo/MR6902742_002.nc"
@@ -77,7 +77,7 @@ for(i in first_profiles){
   
   chla_adjusted_qc <- ncvar_get(nc,"CHLA_ADJUSTED_QC")
   chla_adjusted_qctab  <- llply(chla_adjusted_qc,function(qcstring){
-    as.numeric(unlist(strsplit(qcstring,split="")))
+    as.numeric(unlist(strsplit(qcstring,split="")))flu
   })
   chla_adjusted_qctab <- do.call(cbind,chla_adjusted_qctab)
   chla_adjusted_qc <- chla_adjusted_qctab[,p]
@@ -111,7 +111,9 @@ nc_df <- nc_df %>% select(-down)
 #write_csv(argo_data, "Data/argo/first_profiles")
 #write_csv(refbis, "Scripts/Data/argo/ref_bis")
 
-
+sarc <- filter(argo_data, id %in% c(6901514:6901520))
+ggplot(sarc)+
+  geom_path(aes(x = chla_adjusted, y = -pres, group = id, colour = id))
 
 # which(duplicated(merged$tchla))
 # 

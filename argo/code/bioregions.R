@@ -101,7 +101,7 @@ g1 <- ggplot(region_argo)+
   geom_errorbar(aes(code, ymax = 1, ymin = 1),
                 size=1, linetype = "longdash", inherit.aes = F, width = 1)+
   guides(fill = FALSE)+
-  scale_fill_brewer(palette = "Set1")+
+  scale_fill_brewer(palette = "Dark2")+
   theme_bw(base_size = 20)+
   ylim(0,9)
 g1  
@@ -137,7 +137,7 @@ gabs <- ggplot(region_argo_absorbance)+
   xlab("Province océanique")+
   ylab("Rapport a440/a470")+
   guides(fill = FALSE)+
-  scale_fill_brewer(palette = "Set1")+
+  scale_fill_brewer(palette = "Dark2")+
   theme_bw(base_size = 20)
 
 grid.arrange(g1, gabs, ncol = 1)
@@ -169,7 +169,7 @@ pigment_region <- argo %>% group_by(code) %>%
 
 g_pig <- ggplot(filter(pigment_region, pigment != "tchla"))+
   geom_col(aes(x = code, y = concentration, fill = pigment), position = "Fill")+
-  scale_fill_brewer(palette = "Set1")+
+  scale_fill_brewer(palette = "Dark2")+
   theme_bw(base_size = 20)
 
 grid.arrange(g1, g_pig, ncol = 1)
@@ -199,7 +199,7 @@ g_size_index <- ggplot(region_argo_size_index)+
   xlab("Province océanique")+
   ylab("Size index")+
   guides(fill = FALSE)+
-  scale_fill_brewer(palette = "Set1")+
+  scale_fill_brewer(palette = "Dark2")+
   theme_bw(base_size = 20)
 g_size_index
 
@@ -231,7 +231,7 @@ ggplot(argo)+
 #   geom_text_repel(aes(x = CA1*1.5, y = CA2*1.5, label = rownames(pig_score)), data = pig_score)+
 #   geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = env_arrow, colour = "#33a02c")+
 #   geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(env_arrow), fontface = 2), data = env_arrow)+
-#   scale_color_brewer(palette = "Set1") + coord_equal() +
+#   scale_color_brewer(palette = "Dark2) + coord_equal() +
 #   guides(colour = FALSE)+
 #   theme_bw()
 # 
@@ -243,7 +243,7 @@ ggplot(argo)+
 #   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
 #   xlab("Longitude (°E)")+ylab("Latitude (°N)")+
 #   coord_quickmap()+
-#   scale_fill_brewer(palette = "Set1", name = "Province océanique", labels = c("Archipelagos", "Arctique Atlantique", "Boréal Polaire", "Méditerranée", "Courant Circumpolaire Antarctique", "Atlantique Subarctique", "Gyre Subtropical Pacifique Sud"))+
+#   scale_fill_brewer(palette = "Dark2, name = "Province océanique", labels = c("Archipelagos", "Arctique Atlantique", "Boréal Polaire", "Méditerranée", "Courant Circumpolaire Antarctique", "Atlantique Subarctique", "Gyre Subtropical Pacifique Sud"))+
 #   guides("fill" = FALSE)+
 #   theme_bw(base_size = 18)
 # 
@@ -285,7 +285,7 @@ ggplot(argo)+
 #   geom_text(aes(x = DCA1 * 3/4, y = DCA2 * 3/4, label = rownames(pigscore_detrend)), data = pigscore_detrend, size = 6)+
 #   geom_segment(aes(x = 0, y = 0, xend = DCA1, yend = DCA2), data = fitarrow_detrend, colour = "#33a02c", size = 1)+
 #   geom_text(aes(x = DCA1, y = DCA2, label=rownames(fitarrow_detrend), fontface = 2), data = fitarrow_detrend, size = 7)+
-#   scale_color_brewer(name = "Code", palette = "Set1")+
+#   scale_color_brewer(name = "Code", palette = "Dark2)+
 #   coord_equal()+
 #   xlab("DCA1 47%")+ylab("DCA2 7%")+
 # #  ggtitle("Detrend Correspondance analysis on Argo HPLC data")+
@@ -331,7 +331,7 @@ ggplot(argo)+
 #                 size=0.5, linetype = "longdash", inherit.aes = F, width = 1)+
 #   theme(axis.text.x = element_text(angle = 45))+
 #   guides(fill = FALSE)+
-#   scale_fill_brewer(palette = "Set1")
+#   scale_fill_brewer(palette = "Dark2)
 # 
 # grid.arrange(g1, g4, ncol = 1)
 # 
@@ -356,7 +356,7 @@ ggplot(argo)+
 #   geom_text_repel(aes(x = CA1*1.5, y = CA2*1.5, label = rownames(pig_score)), data = pig_score)+
 #   geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = env_arrow, colour = "#33a02c")+
 #   geom_text(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(env_arrow), fontface = 2), data = env_arrow)+
-#   scale_color_brewer(palette = "Set1") + coord_equal() +
+#   scale_color_brewer(palette = "Dark2) + coord_equal() +
 #   guides(colour = FALSE)
 # 
 # summary(lm(ratio~phi_glob, data = argo))

@@ -173,6 +173,42 @@ g_pig <- ggplot(filter(pigment_region, pigment != "tchla"))+
   theme_bw(base_size = 20)
 
 grid.arrange(g1, g_pig, ncol = 1)
+
+
+#compute the size index 
+
+argo <- argo %>% mutate(size_index = 1 * micro + 5 * nano + 50 * micro)
+
+ggplot(argo)+
+  geom_point(aes(x = size_index, y = photo_440, colour = code))+
+  xlab("size index")+
+  ylab("rapport a440/a470")+
+  theme_minimal()
+
+#resume it by region
+region_argo_size_index <- argo  %>% group_by(code) %>% summarise_at(vars(size_index), c(mean, sd), na.rm = TRUE) %>% ungroup()
+names(region_argo_size_index) <- c("code", "mean", "sd")
+
+region_argo_size_index <- filter(region_argo_size_index, code != "ANTA")#delete this region because we only have 1 observation
+
+#plot
+
+g_size_index <- ggplot(region_argo_size_index)+
+  geom_col(aes(x = reorder(region_argo$code, region_argo$mean), y = mean, fill = code))+
+  geom_errorbar(aes(x = code, ymin = mean - sd, ymax = mean + sd))+
+  xlab("Province océanique")+
+  ylab("Size index")+
+  guides(fill = FALSE)+
+  scale_fill_brewer(palette = "Set1")+
+  theme_bw(base_size = 20)
+g_size_index
+
+grid.arrange(g1, gabs, g_size_index, ncol = 1 )
+
+ggplot(argo)+
+  geom_point(aes(x = size_index, y = ratio, colour = code))+
+  scale_color_brewer(palette = "Dark2")+
+  theme_classic()
 # #AFC####
 # afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.y, lat.y))
 # afc_table <- filter(afc_table, code != "ANTA")

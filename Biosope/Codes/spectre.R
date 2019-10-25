@@ -69,6 +69,16 @@ gchla <- ggplot(biosope_first_point)+
 
 grid.arrange(gchla, gratio)
 
+#analyse of the varaicne bewteen the two aPS
+
+#create a df to use geom_boxplot
+
+absorbtion <- data.frame("lambda" = as.factor(c(rep(440, 433), rep(470, 433))), "aps" = c(biosope$photo_440, biosope$photo_470))
+
+ggplot(absorbtion)+
+  geom_boxplot(aes(x = lambda, y = aps))+
+  theme_classic()+
+  ylab("aPS")
 
   # argo <- read_csv("argo/Data/merged_argo")
 # 

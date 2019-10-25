@@ -55,19 +55,32 @@ date_new <- seq(min(boussole_mean$date), max(boussole_mean$date), by = 20)
 
 #interpolate values on this new date scale
 interp_values <- interpolate(boussole_mean$date, boussole_mean$ratio, date_new, method = "linear")
+interp_values_tchla <- interpolate(boussole_mean$date, boussole_mean$tchla, date_new, method = "linear")
+
 
 #create a df on the new scale with new values
-boussole_ts <- data.frame("date" = date_new, "ratio" = interp_values)
+boussole_ts <- data.frame("date" = date_new, "ratio" = interp_values, "tchla" = interp_values_tchla)
 
 boussole_ts$year <- year(boussole_ts$date)
 
 ratio_time <- ggplot(boussole_ts)+
-  geom_path(aes(x = date, y = ratio))+
-  facet_wrap(.~year, ncol = 1, scales = "free")
+  geom_path(aes(x = date, y = ratio), colour = "#fdae6b")+
+  facet_wrap(.~year, ncol = 1, scales = "free")+
+  theme_bw()+
+  ylab("aPS440/aPS470")
+
+tchla_time <- ggplot(boussole_ts)+
+  geom_path(aes(x = date, y = tchla), colour = "#a1d99b")+
+  facet_wrap(.~year, ncol = 1, scales = "free")+
+  theme_bw()+
+  ylab("[Chla]")
+
+
+
+grid.arrange(tchla_time, ratio_time, ncol = 2)
 #create a ts object
 boussole_ts <- ts(boussole_ts$ratio)
 
-autoplot(boussole_ts)
 
 #stl on ts (loess decomposition)
 
@@ -76,6 +89,7 @@ boussole_stl <- stlplus(boussole_ts, n.p = 4, s.window = "periodic", t.windows =
 #plot the object
 
 plot(boussole_stl, scales = list(y = "free"))
+
 
 #This waas not very good
 #Now we try to see the variability of pigments composition

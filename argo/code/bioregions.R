@@ -142,6 +142,7 @@ gabs <- ggplot(region_argo_absorbance)+
 
 grid.arrange(g1, gabs, ncol = 1)
 
+
 ggplot(argo)+
   geom_point(aes(x = ratio, y = ratio_abs, colour = code))+
   xlab("rapport fluo/[tchla]")+
@@ -149,6 +150,18 @@ ggplot(argo)+
   ylim(1,5)+
   xlim(0,10)+
   theme_minimal()
+
+#variance des deux absorbtions photosynthétiques
+
+#create a df to be able to use the geom boxplot function
+absorbtion <- data.frame("lambda" = as.factor(c(rep(440, 180), rep(470,180))), "aps" = c(argo$photo_440, argo$photo_470))
+
+ggplot(absorbtion)+
+  geom_boxplot(aes(x = lambda, y = aps))+
+  ylab("aPS")+
+  theme_classic()
+
+#analyse des pigments
 
 pigment_region <- argo %>% group_by(code) %>%
   summarise_at(vars(peri, but, hex, fuco, allo, tchla), mean) %>% ungroup() %>% 

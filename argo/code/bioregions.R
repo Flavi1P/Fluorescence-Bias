@@ -144,12 +144,13 @@ grid.arrange(g1, gabs, ncol = 1)
 
 
 ggplot(argo)+
-  geom_point(aes(x = ratio, y = ratio_abs, colour = code))+
-  xlab("rapport fluo/[tchla]")+
+  geom_point(aes(x = tchla, y = ratio_abs, colour = code))+
+  xlab("[Chla]HPLC")+
   ylab("rapport a440/a470")+
   ylim(1,5)+
-  xlim(0,10)+
-  theme_minimal()
+  xlim(0,2.5)+
+  scale_colour_brewer(palette = "Dark2")+
+  theme_classic()
 
 #variance des deux absorbtions photosynthétiques
 
@@ -180,7 +181,7 @@ grid.arrange(g1, g_pig, ncol = 1)
 argo <- argo %>% mutate(size_index = 1 * micro + 5 * nano + 50 * micro)
 
 ggplot(argo)+
-  geom_point(aes(x = size_index, y = photo_440, colour = code))+
+  geom_point(aes(x = size_index, y = ratio_abs, colour = code))+
   xlab("size index")+
   ylab("rapport a440/a470")+
   theme_minimal()
@@ -206,7 +207,7 @@ g_size_index
 grid.arrange(g1, gabs, g_size_index, ncol = 1 )
 
 ggplot(argo)+
-  geom_point(aes(x = size_index, y = ratio, colour = code))+
+  geom_point(aes(x = size_index, y = ratio_abs, colour = code))+
   scale_color_brewer(palette = "Dark2")+
   theme_classic()
 # #AFC####

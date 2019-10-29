@@ -20,7 +20,7 @@ spectre470 <- filter(spectre, lambda == 470)
 #create columns that correspond to the total photosynthetic absorbance and non photosynthetic absorbance at 440 and 470. Create also a ratio between the two photosynthetic absorbtion
 boussole <- boussole %>% mutate(photo_440 = peri * spectre440$peri + but * spectre440$x19_bf + hex * spectre440$x19_hf + fuco * spectre440$fuco + allo * spectre440$allox + dvchla * spectre440$dv_chla + chla * spectre440$chl_a,
                               protect_440 = zea * spectre440$zea,
-                              photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + dvchla * spectre440$dv_chla + chla * spectre440$chl_a,
+                              photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + dvchla * spectre470$dv_chla + chla * spectre470$chl_a,
                               protect_470 = zea * spectre470$zea,
                               ratio = photo_440/photo_470)
 
@@ -117,7 +117,9 @@ grid.arrange(ratio_time, pigment_time, ncol = 2)
 
 #plot the ratio a440/a470 vs fluo/chla
 
+boussole <- boussole %>% mutate(ratio_abs = photo_440/photo_470) %>% filter(ratio_abs < 40)
+
 ggplot(boussole)+
-  geom_point(aes(x = fluo, y = tchla))+
-  xlim(0,1.25)+
-  ylim(0,2.5)
+  geom_point(aes(x = tchla, y = ratio_abs))
+
+             

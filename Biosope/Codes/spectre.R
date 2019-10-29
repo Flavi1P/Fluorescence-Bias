@@ -3,6 +3,7 @@ library(readxl)
 library(janitor)
 library(lubridate)
 library(gridExtra)
+library(Metrics)
 
 #open biosope data
 biosope <- read_csv("Biosope/Data/biosope")
@@ -69,7 +70,7 @@ gchla <- ggplot(biosope_first_point)+
 
 grid.arrange(gchla, gratio)
 
-#analyse of the varaicne bewteen the two aPS
+#analyse of the variance bewteen the two aPS
 
 #create a df to use geom_boxplot
 
@@ -80,13 +81,60 @@ ggplot(absorbtion)+
   theme_classic()+
   ylab("aPS")
 
-  # argo <- read_csv("argo/Data/merged_argo")
-# 
-# argo <- argo %>% mutate(photosynthetic = peri * spectre$peri + but * spectre$x19_bf + fuco * spectre$fuco + allo * spectre$allox + tchla * spectre$chl_a,
-#                               protect = zea * spectre$zea)
-# 
-# ggplot(filter(argo), aes(x = chla))+
-#   geom_point(aes(y = photosynthetic), colour = "green")+
-#   geom_point(aes(y = protect), colour = "black")+
-#   xlim(0,1) + ylim(0,0.025)
-# 
+
+#Estimation of the error of linear reconstruction of absorbtion
+
+#read the absorbtion data
+
+biosope_ap <- read_excel("Biosope/Data/biosope_ap_spectro_98_2005_09_12.xls")
+names(biosope_ap) <- tolower(names(biosope_ap))
+
+biosope_nap <- read_excel("Biosope/Data/biosope_aNAP_spectro_98_2005_09_12.xls")
+names(biosope_nap) <- tolower(names(biosope_nap))
+
+#select only 440 and 470nm wavelength
+biosope_ap <- select(biosope_ap, station, ctd, "bottle no.", depth, "440", "470")
+biosope_nap <- select(biosope_nap, station, ctd, "bottle no.", depth, "440", "470")
+
+#rename some columns to match with biosope df
+biosope_ap <- rename(biosope_ap, btl_nbr = "bottle no.", site = station, aap470 = "470", aap440 = "440")
+biosope_nap <- rename(biosope_nap, btl_nbr = "bottle no.", site = station, anp470 = "470", anp440 = "440")
+
+#make biosope nap 440 et 470 numeric
+biosope_nap$anp470 <- as.numeric(biosope_nap$anp470)
+biosope_nap$anp440 <- as.numeric(biosope_nap$anp440)
+
+
+#make btl nbr numeric to enable left join
+biosope_ap$btl_nbr <- as.numeric(biosope_ap$btl_nbr)
+biosope_nap$btl_nbr <- as.numeric(biosope_nap$btl_nbr)
+
+#make station names the same
+biosope_ap$site <- gsub("^STB", "St", biosope_ap$site)
+biosope_nap$site <- gsub("^STB", "St", biosope_nap$site)
+
+#merge all dataset
+biosope_absorbtion <- left_join(biosope, biosope_ap, by = c("site", "btl_nbr"))
+biosope_absorbtion <- left_join(biosope_absorbtion, biosope_nap, by = c("site", "btl_nbr"))
+
+biosope_absorbtion <- biosope_absorbtion %>% mutate(atot_440 = photo_440 + protect_440,
+                                                    atot_470 = photo_470 + protect_470,
+                                                    aph_440 = aap440 - anp440,
+                                                    aph_470 = aap470 - anp470)
+
+
+#plot the estimation of absorbtion vs the real absorbtion
+ggplot(biosope_absorbtion)+
+  geom_point(aes(x = aph_440, y = atot_440))
+
+ggplot(biosope_absorbtion)+
+  geom_point(aes(x = aph_470, y = atot_470))
+
+#compute the mean absolute percentage error
+biosope_absorbtion <- biosope_absorbtion[-which(is.na(biosope_absorbtion$aph_470)),]
+mape(biosope_absorbtion$aph_470, biosope_absorbtion$atot_470)
+
+mape(biosope_absorbtion$aph_440, biosope_absorbtion$atot_440)
+
+#une forte erreur due à une pente de 1.7 sur la régression, mais un r² de 0.91
+

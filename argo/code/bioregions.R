@@ -210,7 +210,9 @@ ggplot(argo)+
   geom_point(aes(x = size_index, y = ratio_abs, colour = code))+
   scale_color_brewer(palette = "Dark2")+
   theme_classic()
-# #AFC####
+
+    
+    # #AFC####
 # afc_table <- na.omit(select(argo, pigments, code, micro, nano, pico,  ratio, lon.y, lat.y))
 # afc_table <- filter(afc_table, code != "ANTA")
 # 

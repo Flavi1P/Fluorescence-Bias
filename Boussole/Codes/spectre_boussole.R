@@ -119,7 +119,10 @@ grid.arrange(ratio_time, pigment_time, ncol = 2)
 
 boussole <- boussole %>% mutate(ratio_abs = photo_440/photo_470) %>% filter(ratio_abs < 40)
 
-ggplot(boussole)+
-  geom_point(aes(x = tchla, y = ratio_abs))
+ggplot(filter(boussole, depth < 20))+
+  geom_point(aes(x = tchla, y = ratio_abs))+
+  coord_trans(x = "log", y = "log")
 
-             
+boussole_surf <- filter(boussole_mean, depth < 20)
+
+test <- cor.test(boussole_surf$tchla, boussole_surf$ratio, method = "spearman")

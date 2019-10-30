@@ -144,5 +144,15 @@ summary(lm(biosope_absorbtion$aph_470~biosope_absorbtion$atot_470))
 summary(lm(biosope_absorbtion$aph_440~biosope_absorbtion$atot_440))
 
 #une forte erreur due à une pente de 1.7 sur la régression, mais un r² de 0.91
+spectre_tall <- gather(spectre, 2:15, key = "pigment", value = "abs")
 
-
+ggplot(spectre_tall)+
+  scale_color_brewer(palette = "Set3")+
+  geom_path(aes(x = lambda, y = abs, colour = pigment), size = 0.6)+
+  geom_rect(aes(xmin = 435, xmax = 445, ymin = 0, ymax = 0.078), fill = "#b3e2cd", alpha = 1/72)+
+  geom_rect(aes(xmin = 465, xmax = 475, ymin = 0, ymax = 0.078), fill = "#cbd5e8", alpha = 1/72)+
+  theme_dark()
+  
+            
+            
+            

@@ -125,16 +125,24 @@ biosope_absorbtion <- biosope_absorbtion %>% mutate(atot_440 = photo_440 + prote
 
 #plot the estimation of absorbtion vs the real absorbtion
 ggplot(biosope_absorbtion)+
-  geom_point(aes(x = aph_440, y = atot_440))
+  geom_point(aes(x = aph_440, y = atot_440))+
+  geom_smooth(aes(x = aph_440, y = atot_440), method = "lm")
 
-ggplot(biosope_absorbtion)+
-  geom_point(aes(x = aph_470, y = atot_470))
+  ggplot(biosope_absorbtion)+
+  geom_point(aes(x = aph_470, y = atot_470))+
+  geom_smooth(aes(x = aph_470, y = atot_470), method = "lm")
+
 
 #compute the mean absolute percentage error
 biosope_absorbtion <- biosope_absorbtion[-which(is.na(biosope_absorbtion$aph_470)),]
-mape(biosope_absorbtion$aph_470, biosope_absorbtion$atot_470)
+mad(biosope_absorbtion$aph_470, biosope_absorbtion$atot_470)
 
-mape(biosope_absorbtion$aph_440, biosope_absorbtion$atot_440)
+mad(biosope_absorbtion$aph_440, biosope_absorbtion$atot_440)
+
+summary(lm(biosope_absorbtion$aph_470~biosope_absorbtion$atot_470))
+
+summary(lm(biosope_absorbtion$aph_440~biosope_absorbtion$atot_440))
 
 #une forte erreur due à une pente de 1.7 sur la régression, mais un r² de 0.91
+
 

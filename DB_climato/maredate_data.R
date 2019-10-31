@@ -1,6 +1,5 @@
 library(tidyverse)
 library(readxl)
-library(lubridate)
 library(janitor)
 
 #open maredat data and clean names
@@ -46,4 +45,5 @@ ggplot()+
   coord_equal()+
   theme_minimal()
 
+#We have 16 276 samples ! 
 

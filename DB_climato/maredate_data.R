@@ -40,10 +40,11 @@ maredat_clean <- maredat_short[- which(is.na(maredat_short$pigsum)),]
 
 #plot it
 ggplot()+
-  geom_point(data = maredat_short, aes(x = long, y = lat), shape = 21, fill = "#1c9099", colour = "black")+
+  geom_point(data = maredat_clean, aes(x = long, y = lat), shape = 21, fill = "#1c9099", colour = "black")+
   geom_polygon(data = map, aes(x = long, y = lat, group = group), fill = "Grey")+
   coord_equal()+
-  theme_minimal()
+  theme_minimal()+
+  ggtitle("Map of Maredat samples we can use")
 
 #We have 16 276 samples ! 
 

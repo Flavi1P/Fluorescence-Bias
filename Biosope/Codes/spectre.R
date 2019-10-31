@@ -84,6 +84,23 @@ ggplot(absorbtion)+
 
 #Estimation of the error of linear reconstruction of absorbtion
 
+#look at the absorbtion spectra
+spectre_tall <- gather(spectre, 2:15, key = "pigment", value = "abs")
+
+ggplot(spectre_tall)+
+  scale_color_brewer(palette = "Set3")+
+  geom_path(aes(x = lambda, y = abs, colour = pigment), size = 0.6)+
+  geom_rect(aes(xmin = 435, xmax = 445, ymin = 0, ymax = 0.078), fill = "#b3e2cd", alpha = 1/72)+
+  geom_rect(aes(xmin = 465, xmax = 475, ymin = 0, ymax = 0.078), fill = "#cbd5e8", alpha = 1/72)+
+  theme_dark()
+
+  #Ok so we need to include as many pigment as we can
+#NA means LOD for pigment, so we change NA for 0
+biosope[is.na(biosope)] <- 0
+biosope <- biosope %>% mutate(full_440 = spectre440$chlc12 * tchlc + spectre440$peri * peri + spectre440$x19_bf * but + spectre440$fuco * fuco + spectre440$x19_hf * hex + spectre440$diad * diad + spectre440$allox * allo + spectre440$zea * zea + spectre440$dv_chlb * dvchlb + spectre440$chl_b * chlb + spectre440$dv_chla * dvchla + spectre440$chl_a * chla + spectre440$ss_car * bcaro + spectre440$a_car * acaro,
+                              full_470 = spectre470$chlc12 * tchlc + spectre470$peri * peri + spectre470$x19_bf * but + spectre470$fuco * fuco + spectre470$x19_hf * hex + spectre470$diad * diad + spectre470$allox * allo + spectre470$zea * zea + spectre470$dv_chlb * dvchlb + spectre470$chl_b * chlb + spectre470$dv_chla * dvchla + spectre470$chl_a * chla + spectre470$ss_car * bcaro + spectre470$a_car * acaro)
+
+
 #read the absorbtion data
 
 biosope_ap <- read_excel("Biosope/Data/biosope_ap_spectro_98_2005_09_12.xls")
@@ -125,34 +142,57 @@ biosope_absorbtion <- biosope_absorbtion %>% mutate(atot_440 = photo_440 + prote
 
 #plot the estimation of absorbtion vs the real absorbtion
 ggplot(biosope_absorbtion)+
-  geom_point(aes(x = aph_440, y = atot_440))+
-  geom_smooth(aes(x = aph_440, y = atot_440), method = "lm")
+  geom_point(aes(x = aph_440, y = full_440))
 
-  ggplot(biosope_absorbtion)+
+ggplot(biosope_absorbtion)+
+  geom_point(aes(x = atot_440, y = full_440))
+
+ggplot(biosope_absorbtion)+
   geom_point(aes(x = aph_470, y = atot_470))+
-  geom_smooth(aes(x = aph_470, y = atot_470), method = "lm")
+  geom_smooth(aes(x = aph_470, y = atot_470), method = "lm", se = FALSE, color = "Grey")
 
+plot(x = biosope_absorbtion$aph_440, y = biosope_absorbtion$full_440,log="xy")
+abline(a=0,b=1,col="red")
+
+summary(lm(biosope_absorbtion$aph_470~biosope_absorbtion$atot_470))
+summary(lm(log10(biosope_absorbtion$aph_470)~log10(biosope_absorbtion$atot_470)))
+
+mape(log10(biosope_absorbtion$aph_470), log10(biosope_absorbtion$atot_470))
 
 #compute the mean absolute percentage error
 biosope_absorbtion <- biosope_absorbtion[-which(is.na(biosope_absorbtion$aph_470)),]
+
 mad(biosope_absorbtion$aph_470, biosope_absorbtion$atot_470)
+mape(biosope_absorbtion$aph_470, biosope_absorbtion$atot_470)
+
 
 mad(biosope_absorbtion$aph_440, biosope_absorbtion$atot_440)
+mape(biosope_absorbtion$aph_440, biosope_absorbtion$atot_440)
+
+mad(biosope_absorbtion$aph_440, biosope_absorbtion$full_440)
+mape(biosope_absorbtion$aph_440, biosope_absorbtion$full_440)
 
 summary(lm(biosope_absorbtion$aph_470~biosope_absorbtion$atot_470))
-
 summary(lm(biosope_absorbtion$aph_440~biosope_absorbtion$atot_440))
 
 #une forte erreur due à une pente de 1.7 sur la régression, mais un r² de 0.91
-spectre_tall <- gather(spectre, 2:15, key = "pigment", value = "abs")
+#On suppose que la pente correspond au package effect
 
-ggplot(spectre_tall)+
-  scale_color_brewer(palette = "Set3")+
-  geom_path(aes(x = lambda, y = abs, colour = pigment), size = 0.6)+
-  geom_rect(aes(xmin = 435, xmax = 445, ymin = 0, ymax = 0.078), fill = "#b3e2cd", alpha = 1/72)+
-  geom_rect(aes(xmin = 465, xmax = 475, ymin = 0, ymax = 0.078), fill = "#cbd5e8", alpha = 1/72)+
-  theme_dark()
-  
-            
+#correction du package effect, on multiplie la reconstruction de l'absorbtion par la pente
+
+package_440 <- lm(biosope_absorbtion$aph_440~biosope_absorbtion$atot_440)$coefficients[2] #on récupère le coefficient
+package_470 <- lm(biosope_absorbtion$aph_470~biosope_absorbtion$atot_470)$coefficients[2] #on récupère le coefficient
+
+biosope_absorbtion <- biosope_absorbtion %>% mutate(a_440_nopackage = atot_440 * package_440,
+                             a_470_nopackage = atot_470 * package_470)
+
+
+#The mape function is not the solution to compute the error. Indeed the small absolute value of what we are looking to make this index meaningless. 
+#To avoid this we rather use the smape which scale the error by the amplitude of the value we are looking at 
+smape(biosope_absorbtion$aph_470, biosope_absorbtion$a_470_nopackage)
+smape(biosope_absorbtion$aph_440, biosope_absorbtion$a_440_nopackage)
+
+
+
             
             

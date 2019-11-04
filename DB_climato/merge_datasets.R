@@ -47,6 +47,8 @@ ggplot()+
 
 combine_hplc_clean <- combine_hplc[- which(duplicated(combine_hplc$test)),]
 
+#write_csv(combine_hplc_clean, "DB_climato/Data/global_hplc")
+
 
 
 

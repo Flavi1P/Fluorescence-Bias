@@ -48,7 +48,7 @@ ggplot()+
 combine_hplc_clean <- combine_hplc[- which(duplicated(combine_hplc$test)),]
 
 #we compute the week of the year to match with climato data
-combine_hplc_clean$week <- week(combine_hplc_clean$date)
+combine_hplc_clean$month <- month(combine_hplc_clean$date)
 
 #write_csv(combine_hplc_clean, "DB_climato/Data/global_hplc")
 

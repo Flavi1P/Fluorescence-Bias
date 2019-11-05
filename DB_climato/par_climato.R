@@ -38,6 +38,8 @@ for(i in 1:nrow(hplc)){
   nc_close(nc_sample)
 }
 
+
+
 # rrs 667 ####
 
 files <- list.files("DB_climato/Data/rrs_667")
@@ -244,10 +246,12 @@ for(i in 1:length(lon)){
 order_lon <- order(lon2)
 
 mld2 <- mld[order_lon,,]
-
+lon2 <- lon2[order_lon]
 lon <- lon2
 
 mld <- mld2
+# image.plot(lon,lat,mld[,,3],zlim=c(0,900))
+# map(add=T)
 
 hplc$mld <- NA
 pb <- txtProgressBar(min = 0, max = nrow(hplc), style = 3)
@@ -267,16 +271,73 @@ table(is.na(hplc$mld))
 
 
 #conclusion ####
-ggplot()+
-  geom_point(aes(x = lon, y = lat, colour = mld), data = filter(hplc, mld < 150 & dataset == "lov"))+
-  geom_polygon(aes(x = long, y = lat, group = group), data = map)
+# ggplot()+
+#   geom_point(aes(x = lon, y = lat, colour = mld), data = filter(hplc, dataset == "lov"))+
+#   geom_polygon(aes(x = long, y = lat, group = group), data = map)+
+#   coord_quickmap()
 
-usuable_hplc <- filter(hplc, dataset == "lov" & rrs667 != "NA" & mld < 200) #define the points where we can compute all we need
+usuable_hplc <- filter(hplc, dataset == "lov" & rrs667 != "NA" & mld < 1000) #define the points where we can compute all we need
 #we exclude maredat information because it's mainly surface points
 
 
-ggplot()+
-  geom_point(aes(x = lon, y = lat, colour = rrs555), data = usuable_hplc)+
-  geom_polygon(aes(x = long, y = lat, group = group), data = map)
+# ggplot()+
+#   geom_point(aes(x = lon, y = lat, colour = rrs555), data = usuable_hplc)+
+#   geom_polygon(aes(x = long, y = lat, group = group), data = map)
 
 #write_csv(usuable_hplc, "DB_climato/Data/database_final")
+
+hplc2 <- usuable_hplc %>% mutate(lon = round(lon, 2),
+                lat = round(lat, 2)) #usuablee_hplc is deprecated from now
+
+LON_LAT_MONTH <- unique(hplc2[,c("lon","lat","month")]) %>% mutate(nprof = seq(1, nrow(.), by = 1)) #create a num of profile
+
+hplc2 <- left_join(hplc2, LON_LAT_MONTH) #add the num of the profile on hplc2
+hplc2 <- filter(hplc2, nprof %in% which(table(hplc2$nprof)>4)) #reject profiles with less than 4 data
+
+# ggplot()+
+#   geom_point(aes(x = lon, y = lat, colour = mld), data = usuable_hplc)+
+#   geom_polygon(aes(x = long, y = lat, group = group), data = map)+
+#   coord_quickmap()
+
+
+# bathymetric data ####
+
+#we want to select only data that come from a profile which is in a zone deeper than 500m
+
+nc_bath <- nc_open("DB_climato/Data/bathy/GEBCO_2014_6x6min_Global.nc")
+
+bath <- ncvar_get(nc_bath, "Height")
+lon <- ncvar_get(nc_bath, nc_bath$dim$lon)
+lat <- ncvar_get(nc_bath, nc_bath$dim$lat)
+
+hplc2$bath <- NA
+
+for(i in 1:nrow(hplc2)){
+  lon_of_sample <- hplc2$lon[i] #the lon
+  lat_of_sample <- hplc2$lat[i] #the lat
+  bath_of_sample <- bath[which.min(abs(lon - lon_of_sample)), which.min(abs(lat - lat_of_sample))] 
+  #extract values at the colsest location of our sample
+  hplc2$bath[i] <- bath_of_sample #attribute the value in the ncdf
+}  
+
+#ggplot()+
+  # geom_point(aes(x = lon, y = lat, colour = bath), data = hplc2)+
+  # geom_polygon(aes(x = long, y = lat, group = group), data = map)+
+  # coord_quickmap()
+
+hplc_open_ocean <- filter(hplc2, bath < - 500) # we filter on the bathymetric criteria
+
+# ggplot()+
+#   geom_point(aes(x = lon, y = lat, colour = bath), data = hplc_open_ocean)+
+#   geom_polygon(aes(x = long, y = lat, group = group), data = map)+
+#   coord_quickmap()
+
+good_profile <- c()
+for(i in unique(hplc_open_ocean$nprof)){
+  t_prof <- filter(hplc_open_ocean, nprof == i)
+  if(max(t_prof$depth) > 100 & min(t_prof$depth < 10)){
+    good_profile <- c(good_profile, i)
+  }
+}
+
+

@@ -270,7 +270,7 @@ nc_close(nc_mld)
 table(is.na(hplc$mld))
 
 
-#conclusion ####
+#checkpoint####
 # ggplot()+
 #   geom_point(aes(x = lon, y = lat, colour = mld), data = filter(hplc, dataset == "lov"))+
 #   geom_polygon(aes(x = long, y = lat, group = group), data = map)+
@@ -339,5 +339,76 @@ for(i in unique(hplc_open_ocean$nprof)){
     good_profile <- c(good_profile, i)
   }
 }
+
+
+
+
+#write_csv(hplc_open_ocean, "DB_climato/Data/database_final")
+
+#ze####
+
+hplc <- read_csv("DB_climato/Data/database_final")
+source("functions/fonction_calcul_Ze_Monte_Carlo.r")
+source("functions/zeu_moma.R")
+
+
+
+hplc$ze_monte_carlo <- NA
+for(i in unique(hplc$nprof)){
+  t_prof <- filter(hplc, nprof == i)
+  ze <- calcul_Ze_Monte_Carlo(t_prof$depth, t_prof$chla)
+  hplc[hplc$nprof == i,]$ze_monte_carlo <- ze$chlze
+}
+
+hplc$ze_morel <- NA
+for(i in unique(hplc$nprof)){
+  t_prof <- filter(hplc, nprof == i)
+  ze <- Zeu_moma(t_prof$chla, t_prof$depth)
+  hplc[hplc$nprof == i,]$ze_morel <- ze
+}
+
+ggplot()+
+  geom_point(aes(x = lon, y = lat, colour = ze_morel), data = hplc)+
+  geom_polygon(aes(x = long, y = lat, group = group), data = map)+
+  coord_quickmap()
+#the ze_morel looks pretty much better
+good_profile <- c()
+for(i in unique(hplc$nprof)){
+  t_prof <- filter(hplc, nprof == i)
+    if(is.na(t_prof$ze_morel)){}
+  else{
+  if(unique(t_prof$ze_morel) < max(t_prof$depth) & min(t_prof$depth) < 10){
+    good_profile <- c(good_profile, i)
+  }
+  }
+}
+
+hplc_qc <- filter(hplc, nprof %in% good_profile) #remove 283 profiles
+
+ggplot()+
+  geom_point(aes(x = lon, y = lat, colour = ze_morel), data = hplc_qc)+
+  geom_polygon(aes(x = long, y = lat, group = group), data = map)+
+  coord_quickmap()
+#now we have our filtered dataset 
+# we add absorbtion variables
+
+#aps variables ####
+
+#open pigments absorbtion
+spectre <- read_excel("Biosope/Data/Spectres_annick.xlsx")
+spectre <- clean_names(spectre)
+
+#select the absorbtion at 440 and 470nm
+spectre440<- filter(spectre, lambda == 440)
+spectre470 <- filter(spectre, lambda == 470)
+
+hplc_qc <- hplc_qc %>% mutate(photo_440 = peri * spectre440$peri + but * spectre440$x19_bf + hex * spectre440$x19_hf + fuco * spectre440$fuco + allo * spectre440$allox + chla * spectre440$chl_a + dv_chla * spectre440$dv_chla,
+                              photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + chla * spectre470$chl_a + dv_chla * spectre470$dv_chla,
+                              ratio = photo_440/photo_470)
+
+#we write our final csv
+
+#write_csv(hplc_qc, "DB_climato/Data/database_final")
+
 
 

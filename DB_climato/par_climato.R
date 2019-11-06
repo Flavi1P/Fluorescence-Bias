@@ -409,6 +409,7 @@ hplc_qc <- hplc_qc %>% mutate(photo_440 = peri * spectre440$peri + but * spectre
 
 hplc_qc$doy <- yday(hplc_qc$date)#compute day of year
 
+hplc_qc <- select(hplc_qc, date, doy, month, everything(), -test, - profile_id, - dataset, - ze_monte_carlo, )
 #we write our final csv
 
 #write_csv(hplc_qc, "DB_climato/Data/database_final")

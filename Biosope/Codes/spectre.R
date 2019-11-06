@@ -87,12 +87,14 @@ ggplot(absorbtion)+
 #look at the absorbtion spectra
 spectre_tall <- gather(spectre, 2:15, key = "pigment", value = "abs")
 
-ggplot(spectre_tall)+
-  scale_color_brewer(palette = "Set3")+
-  geom_path(aes(x = lambda, y = abs, colour = pigment), size = 0.6)+
+abs <- ggplot(filter(spectre_tall, pigment !="dv_chlb" & pigment != "chlc12"))+
+  scale_color_brewer(palette = "Set3", name = "Pigments")+
+  geom_path(aes(x = lambda, y = abs, colour = pigment), size = 0.8)+
   geom_rect(aes(xmin = 435, xmax = 445, ymin = 0, ymax = 0.078), fill = "#b3e2cd", alpha = 1/72)+
   geom_rect(aes(xmin = 465, xmax = 475, ymin = 0, ymax = 0.078), fill = "#cbd5e8", alpha = 1/72)+
-  theme_dark()
+  theme_dark(base_size = 20)
+
+
 
   #Ok so we need to include as many pigment as we can
 #NA means LOD for pigment, so we change NA for 0

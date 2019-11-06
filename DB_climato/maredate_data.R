@@ -25,11 +25,6 @@ maredat_short <- maredat %>% select(database_num, sample_num, exp, ctd, bottle_n
          allo = allox_ng_l * 1000) %>% 
   select(- merged_depth_m, - chla_ng_l, - dv_chla_ng_l, - x19hex_ng_l, - x19but_ng_l, - fucox_ng_l, - perid_ng_l, - allox_ng_l)
 
-ggplot()+
-  geom_point(data = maredat_short, aes(x = long, y = lat, colour = exp))+
-  geom_polygon(data = map, aes(x = long, y = lat, group = group))+
-  coord_equal()
-
 #compute the sum of my pigment, if Na return, then unusable sample
 
 maredat_short <- maredat_short %>% mutate(pigsum = chla + dvchla + hex + but + fuco + peri + allo)
@@ -47,4 +42,6 @@ ggplot()+
   ggtitle("Map of Maredat samples we can use")
 
 #We have 16 276 samples ! 
+
+#write_csv(maredat_clean, "DB_climato/Data/maredat_hplc.csv")
 

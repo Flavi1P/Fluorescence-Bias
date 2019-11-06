@@ -31,4 +31,5 @@ ggplot()+
   coord_equal()+
   theme_minimal()+
   ggtitle("Map of HPLC sample from lov database")
-  
+
+#write_csv(lov_hplc_clean, "DB_climato/Data/lov_hplc.csv")  

@@ -1,5 +1,6 @@
 library(ncdf4)
 library(tidyverse)
+library(lubridate)
 library(maps)
 library(fields)
 
@@ -405,6 +406,8 @@ spectre470 <- filter(spectre, lambda == 470)
 hplc_qc <- hplc_qc %>% mutate(photo_440 = peri * spectre440$peri + but * spectre440$x19_bf + hex * spectre440$x19_hf + fuco * spectre440$fuco + allo * spectre440$allox + chla * spectre440$chl_a + dv_chla * spectre440$dv_chla,
                               photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + chla * spectre470$chl_a + dv_chla * spectre470$dv_chla,
                               ratio = photo_440/photo_470)
+
+hplc_qc$doy <- yday(hplc_qc$date)#compute day of year
 
 #we write our final csv
 

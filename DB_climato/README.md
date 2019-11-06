@@ -11,5 +11,4 @@ What data did we chose ?<br>
 <li>Profiles with the first measurement in the first 10m and the last one below the Zeu</li>
 <li>Profiles with more than 500m depth</li>
 <br><br>
-**Raph_tuto** : some key lines to read netcdf and climato datas
 

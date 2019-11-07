@@ -144,7 +144,7 @@ grid.arrange(g1, gabs, ncol = 1)
 
 
 ggplot(argo)+
-  geom_point(aes(x = ratio, y = ratio_abs, colour = code))+
+  geom_point(aes(x = ratio_abs, y = ratio, colour = code))+
   xlab("fluo/[Chla]")+
   ylab("rapport a440/a470")+
   scale_colour_brewer(palette = "Dark2")+
@@ -152,20 +152,32 @@ ggplot(argo)+
 
 
 argo <- argo[!is.na(argo$ratio_abs),]
-exponential_model <- nls(ratio_abs~(a+ratio^-b), data = argo, start = list(a = 0.5, b = 1))
+exponential_model <- nls(ratio~(b*ratio_abs^-a), data = argo, start = list(a = 0.5, b = 1))
 summary(exponential_model)
 
 
-argo <- argo %>% mutate(fitted_math = 2.02177 + ratio^-0.89454)
+argo <- argo %>% mutate(fitted_math = 13 * ratio_abs^-1.83)
 ggplot(argo)+
-  geom_point(aes(x = ratio, y = ratio_abs, colour = code))+
-  geom_point(aes(x = ratio, y = fitted_math))+
-  xlab("fluo/[Chla]")+
-  ylab("rapport a440/a470")+
-  scale_colour_brewer(palette = "Dark2")+
+  geom_point(aes(x = ratio_abs, y = ratio, colour = depth))+
+  geom_line(aes(x = ratio_abs, y = fitted_math))+
+  ylab("fluo/[Chla]")+
+  xlab("rapport a440/a470")+
+  scale_color_viridis_c()+
   theme_classic()
 
-cor(argo$ratio_abs, predict(exponential_model))
+
+cor(argo$ratio, predict(exponential_model))
+
+argo <- argo %>% mutate(corrected_fluo = fluo/fitted_math)
+
+argo <- argo[!is.na(argo$ratio),]
+ggplot(argo)+
+  geom_point(aes(x = tchla, y = fluo))+
+  geom_point(aes(x = tchla, y = corrected_fluo), colour = "Red")
+
+summary(lm(fluo~tchla, data = argo))
+summary(lm(corrected_fluo~tchla, data = argo))
+
 
 #variance des deux absorbtions photosynthétiques
 

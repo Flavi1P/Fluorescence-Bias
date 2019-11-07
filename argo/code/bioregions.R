@@ -144,13 +144,28 @@ grid.arrange(g1, gabs, ncol = 1)
 
 
 ggplot(argo)+
-  geom_point(aes(x = tchla, y = ratio_abs, colour = code))+
-  xlab("[Chla]HPLC")+
+  geom_point(aes(x = ratio, y = ratio_abs, colour = code))+
+  xlab("fluo/[Chla]")+
   ylab("rapport a440/a470")+
-  ylim(1,5)+
-  xlim(0,2.5)+
   scale_colour_brewer(palette = "Dark2")+
   theme_classic()
+
+
+argo <- argo[!is.na(argo$ratio_abs),]
+exponential_model <- nls(ratio_abs~(a+ratio^-b), data = argo, start = list(a = 0.5, b = 1))
+summary(exponential_model)
+
+
+argo <- argo %>% mutate(fitted_math = 2.02177 + ratio^-0.89454)
+ggplot(argo)+
+  geom_point(aes(x = ratio, y = ratio_abs, colour = code))+
+  geom_point(aes(x = ratio, y = fitted_math))+
+  xlab("fluo/[Chla]")+
+  ylab("rapport a440/a470")+
+  scale_colour_brewer(palette = "Dark2")+
+  theme_classic()
+
+cor(argo$ratio_abs, predict(exponential_model))
 
 #variance des deux absorbtions photosynthétiques
 

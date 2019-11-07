@@ -31,4 +31,4 @@ arrows <- as.data.frame(cca_model$col$coord)
 
 ggplot(arrows)+
   geom_segment(aes(x = 0, xend = arrows$`Dim 1`, y =0, yend = arrows$`Dim 2`))+
-  geom_text(aes(x = arrows$`Dim 1`, y = arrows$`Dim 2`, label = rownames(arrows)))
+  geom_text(aes(x = arrows$`Dim 1`, y = arrows$`Dim 2`, label = rownames(arrows))) 

@@ -142,6 +142,9 @@ gabs <- ggplot(region_argo_absorbance)+
 
 grid.arrange(g1, gabs, ncol = 1)
 
+#find the relation between absorbtion ratio and the fluo biase
+
+#plot the two of them
 
 ggplot(argo)+
   geom_point(aes(x = ratio_abs, y = ratio, colour = code))+
@@ -150,13 +153,15 @@ ggplot(argo)+
   scale_colour_brewer(palette = "Dark2")+
   theme_classic()
 
-
+#compute a non linear least squares from the shape of the curve (ax^-b)
 argo <- argo[!is.na(argo$ratio_abs),]
 exponential_model <- nls(ratio~(b*ratio_abs^-a), data = argo, start = list(a = 0.5, b = 1))
-summary(exponential_model)
+summary(exponential_model)#get the ratios
 
 
-argo <- argo %>% mutate(fitted_math = 13 * ratio_abs^-1.83)
+argo <- argo %>% mutate(fitted_math = 13 * ratio_abs^-1.83) #recompute the estimated values
+
+#plot the estimation
 ggplot(argo)+
   geom_point(aes(x = ratio_abs, y = ratio, colour = depth))+
   geom_line(aes(x = ratio_abs, y = fitted_math))+
@@ -165,21 +170,25 @@ ggplot(argo)+
   scale_color_viridis_c()+
   theme_classic()
 
-
+#test the correlation between prediction and actual
 cor(argo$ratio, predict(exponential_model))
 
+#correct the fluorescence signal from there
 argo <- argo %>% mutate(corrected_fluo = fluo/fitted_math)
 
+#plot the corrected fluorescence
 argo <- argo[!is.na(argo$ratio),]
 ggplot(argo)+
-  geom_point(aes(x = tchla, y = fluo))+
-  geom_point(aes(x = tchla, y = corrected_fluo), colour = "Red")
+  geom_point(aes(x = log(tchla), y = log(fluo)))+
+  geom_point(aes(x = log(tchla), y = log(corrected_fluo)), colour = "Red")+
+  geom_line(aes(x = log(tchla) ,y = log(tchla)))
 
+#we increase a bit the R² but the regression coefficient is now close to 1 
 summary(lm(fluo~tchla, data = argo))
 summary(lm(corrected_fluo~tchla, data = argo))
 
 
-#variance des deux absorbtions photosynthétiques
+##variance des deux absorbtions photosynthétiques ###
 
 #create a df to be able to use the geom boxplot function
 absorbtion <- data.frame("lambda" = as.factor(c(rep(440, 180), rep(470,180))), "aps" = c(argo$photo_440, argo$photo_470))

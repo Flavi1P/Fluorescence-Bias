@@ -8,6 +8,7 @@ library(grid)
 library(nnls)
 library(FactoMineR)
 library(janitor)
+library(Metrics)
 path = "Data/Longhurst"
 argo <- read_csv("Data/merged_argo")
 source("functions/outliers.R")
@@ -182,6 +183,11 @@ ggplot(argo)+
   geom_point(aes(x = log(tchla), y = log(fluo)))+
   geom_point(aes(x = log(tchla), y = log(corrected_fluo)), colour = "Red")+
   geom_line(aes(x = log(tchla) ,y = log(tchla)))
+
+#compare rmse
+a <- rmse(argo$tchla, argo$chla_adjusted)
+b <- rmse(argo$tchla, argo$corrected_fluo)
+b/a
 
 #we increase a bit the R² but the regression coefficient is now close to 1 
 summary(lm(fluo~tchla, data = argo))

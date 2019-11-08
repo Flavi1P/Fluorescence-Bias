@@ -10,5 +10,6 @@ What data did we chose ?<br>
 <li>Profiles with more than 4 points</li>
 <li>Profiles with the first measurement in the first 10m and the last one below the Zeu</li>
 <li>Profiles with more than 500m depth</li>
+<li>Profiles that are not in the argo matchup databse -> **remove_argo_profiles.R** </li>
 <br><br>
 

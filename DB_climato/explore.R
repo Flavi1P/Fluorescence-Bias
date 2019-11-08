@@ -3,6 +3,7 @@ library(FactoMineR)
 
 hplc <- read_csv("DB_climato/Data/database_final")
 
+
 model <- lm(ratio~chla + peri + fuco + dv_chla + allo + hex + but, data = hplc)
 summary(model)
 

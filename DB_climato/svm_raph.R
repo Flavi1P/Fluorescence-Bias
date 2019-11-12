@@ -135,8 +135,13 @@ for(c in 1:dim(x_train)[2]){
 y_train <- 2/3 * (y_train-MEAN_DATA[14])/SD_DATA[14]
 y_valid <- 2/3 * (y_valid-MEAN_DATA[14])/SD_DATA[14]
 
+x_train$ratio <- y_train
+#select best parameters
+tuned_parameters <- tune.svm(ratio~., data = x_train, gamma = 10^(-5:-1), cost = 10^(-3:1))
+
+
 #Train the model of support vector machine
-model <- svm(y_train~., data=x_train)
+model <- svm(y_train~., data= select(x_train, -depth))
 
 #predict the validation outputs ftom the validation input subset
 pred_valid <- predict(model, x_valid)
@@ -154,19 +159,19 @@ intercept2 <- SM2$coefficients[1,1]
 R_squared2 <- SM2$adj.r.squared
 
 #plot the scatterplot between the obs and pred values + statistics
-png(paste(dir_plot,"SVM_Ratio_P_trans.png",sep=""),res=300,height=300*8,width=300*8)
-plot(Estimated_ratio,Obs_ratio,log="xy",xlim=range(Obs_ratio,Estimated_ratio),ylim=range(Obs_ratio,Estimated_ratio),
-     xlab = "Ratio from SVM",ylab = "Ratio from pigments")
-abline(a=0,b=1,col="red")
-mtext(paste("RMSE =", round(RMSE,2), ",", "R²", "=", round(R_squared2,2), ", y = a *", round(slope2,2), "+", round(intercept2,2), sep=" "))
-graphics.off()
+# png(paste(dir_plot,"SVM_Ratio_P_trans.png",sep=""),res=300,height=300*8,width=300*8)
+# plot(Estimated_ratio,Obs_ratio,log="xy",xlim=range(Obs_ratio,Estimated_ratio),ylim=range(Obs_ratio,Estimated_ratio),
+#      xlab = "Ratio from SVM",ylab = "Ratio from pigments")
+# abline(a=0,b=1,col="red")
+# mtext(paste("RMSE =", round(RMSE,2), ",", "R²", "=", round(R_squared2,2), ", y = a *", round(slope2,2), "+", round(intercept2,2), sep=" "))
+# graphics.off()
 
 #ggplot scatterplot to have the colour for depth --> to improve!
 DATABASE_VALID2 <- cbind(DATABASE_VALID,Estimated_ratio,Obs_ratio)
-ggplot(data = DATABASE_VALID2[DATABASE_VALID2$depth<1000,], aes(x = Estimated_ratio, y = Obs_ratio, colour=log(depth))) +
-  geom_point()+
-  ylim(0,10)
-
+ggplot(data = DATABASE_VALID2) +
+  geom_point(aes(x = log(Estimated_ratio), y = log(Obs_ratio)))+
+  geom_line(aes(x = log(Estimated_ratio), y = log(Estimated_ratio)), col = "Red")+
+  theme_minimal()
 
     ##create and save DATABASE TRAIN and VALID for NN training on lush
 # 

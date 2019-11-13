@@ -147,12 +147,12 @@ y_valid <- 2/3 * (y_valid-MEAN_DATA[14])/SD_DATA[14]
 #x_train$ratio <- y_train
 #select best parameters
 #tuned_parameters <- tune.svm(ratio~., data = x_train, gamma = 10^(-5:-1), cost = 10^(-3:1)) # this take a while
-#summary(tuned_parameters)
+#summary(tuned_parameters) best parameters gamma = 0.1 & cost = 1, but if we take default ettings we have better rmse and R²
 
 #x_train <- select(x_train, - ratio)
 
 #Train the model of support vector machine
-model <- svm(y_train~., data= x_train)
+model <- svm(y_train~., data= x_train, gamma = 0.001, cost = 1)
 
 
 #predict the validation outputs ftom the validation input subset
@@ -273,6 +273,19 @@ rmse(argo$corrected_fluo, argo$tchla)
 rmse(argo$chla_adjusted, argo$tchla)
 
 
+model_chla_adjusted <- lm(argo$chla_adjusted ~ argo$tchla)
+model_fluo_corrected <- lm(argo$corrected_fluo~ argo$tchla)
+
+summary(model_chla_adjusted)
+summary(model_fluo_corrected)
+
+
+ggplot(argo)+
+  geom_point(aes(x = tchla, y = chla_adjusted))+
+  geom_point(aes(x = tchla, y = corrected_fluo), colour = "Red")+
+  geom_line(aes(x = tchla ,y = tchla))
+
+#write_csv(argo, "DB_climato/argo_fluo_corrected")
 
 #create and save DATABASE TRAIN and VALID for NN training on lush####
 # 

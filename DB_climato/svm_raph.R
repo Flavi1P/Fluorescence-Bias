@@ -254,6 +254,24 @@ ggplot(data = argo_predict) +
 
 #Correction of the fluo ####
 
+argo$ratio_estimated <- Estimated_ratio
+
+argo <- argo %>% mutate(fitted_math = 13 * ratio_estimated^-1.83) #recompute the estimated values
+
+argo$fluo <- argo$chla_adjusted * 2
+#correct the fluorescence signal from there
+argo <- argo %>% mutate(corrected_fluo = fluo/fitted_math)
+
+#plot the corrected fluorescence
+
+ggplot(argo)+
+  geom_point(aes(x = log(tchla), y = log(fluo)))+
+  geom_point(aes(x = log(tchla), y = log(corrected_fluo)), colour = "Red")+
+  geom_line(aes(x = log(tchla) ,y = log(tchla)))
+
+rmse(argo$corrected_fluo, argo$tchla)
+rmse(argo$chla_adjusted, argo$tchla)
+
 
 
 #create and save DATABASE TRAIN and VALID for NN training on lush####

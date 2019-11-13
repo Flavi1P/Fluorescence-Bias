@@ -1,8 +1,11 @@
 library(maps)
 library(e1071)
+library(tidyverse)
 library(dplyr)
 library(hydroGOF)
 library(ggplot2)
+library(janitor)
+library(readxl)
 
 #set the path to directories for data and plots
 dir_data <- "DB_climato/Data/"
@@ -56,11 +59,12 @@ length(iii_data_train)
 # 1382
 length(LON_LAT_DATE[,1])
 # 1728
+
 # 1728-1382 #346 stations pour validation
 
-#for exemple check the dfference between the distribution of rrs and log(rrs)
-hist(database$rrs412)
-hist(log(database$rrs412))
+# #for exemple check the dfference between the distribution of rrs and log(rrs)
+# hist(database$rrs412)
+# hist(log(database$rrs412))
 
 #add to the database the logtransformation of rrs, mld and depth
 database <- mutate(.data = database, log_rrs667 = log(rrs667),
@@ -69,21 +73,23 @@ database <- mutate(.data = database, log_rrs667 = log(rrs667),
                    log_mld = log(mld), log_depth = log(depth))
 
 #plot the histograms of each variable from the database
-pdf(paste(dir_plot,"Hist_data.pdf"))
-par(mfrow=c(2,2))
-for(i in 14:dim(database)[2]){
-  hist(database[,i],main=paste("Histogramme",colnames(database)[i]))
-}
-graphics.off()
+# pdf(paste(dir_plot,"Hist_data.pdf"))
+# par(mfrow=c(2,2))
+# for(i in 14:dim(database)[2]){
+#   hist(database[,i],main=paste("Histogramme",colnames(database)[i]))
+# }
+# graphics.off()
 
 # database2 <- database[,c("N","depth","sin_lon","cos_lon","sin_doy","cos_doy","lat","par", "log_rrs667", "log_rrs555", 
 #                          "log_rrs488", "log_rrs443", "log_rrs412", "log_mld", "logratio")]
-# database2 <- database2[!is.na(database2$log_rrs667),]
+
 
 #create the database with the inputs that we want to have in our model (save the N for the separation between training and validation profiles)
-database2 <- database[,c("N","depth","sin_lon","cos_lon","sin_doy","cos_doy","lat","par", "rrs667", "rrs555", 
+database2 <- database[,c("N","depth","sin_lon","cos_lon","sin_doy","cos_doy","lat","par", "log_rrs667", "log_rrs555", 
 
-                                                  "rrs488", "rrs443", "rrs412", "mld", "logratio")]
+                                                  "log_rrs488", "log_rrs443", "log_rrs412", "log_mld", "logratio")]
+
+database2 <- database2[!is.na(database2$log_rrs667),]
 
 
 #seperate the database for training and validation and remove the N input
@@ -91,14 +97,14 @@ DATABASE_TRAIN <- database2[database2$N %in% iii_data_train,-1]
 DATABASE_VALID <- database2[!database2$N %in% iii_data_train,-1]
 
 #plot the geographical distribution of training and validation profiles
-png(paste(dir_plot,"Database.png",sep=""),res=300, width=400*7,height=400*4)
-par(las=1)
-plot(database$lon[database$N %in% iii_data_train],database$lat[database$N %in% iii_data_train], pch=19, col="turquoise4", xlab="Longitude", ylab= "Latitude", 
-     main = paste(length(iii_data_train),"training stations and", length(LON_LAT_DATE[,1])-length(iii_data_train), "validation stations",sep=" "))
-points(database$lon[!database$N %in% iii_data_train],database$lat[!database$N %in% iii_data_train], pch=19, col="violetred3")
-map(add=T,col="black", fill=T)
-legend("bottomright", col= c("turquoise4","violetred3"), legend = c("training","validation"), pch=19, box.lty=0)
-graphics.off()
+# png(paste(dir_plot,"Database.png",sep=""),res=300, width=400*7,height=400*4)
+# par(las=1)
+# plot(database$lon[database$N %in% iii_data_train],database$lat[database$N %in% iii_data_train], pch=19, col="turquoise4", xlab="Longitude", ylab= "Latitude", 
+#      main = paste(length(iii_data_train),"training stations and", length(LON_LAT_DATE[,1])-length(iii_data_train), "validation stations",sep=" "))
+# points(database$lon[!database$N %in% iii_data_train],database$lat[!database$N %in% iii_data_train], pch=19, col="violetred3")
+# map(add=T,col="black", fill=T)
+# legend("bottomright", col= c("turquoise4","violetred3"), legend = c("training","validation"), pch=19, box.lty=0)
+# graphics.off()
 
 #funcion to transform the pressure input as in Sauzede et al. 2017 and Bittig et al. 2018 (CANYON method)
 P_trans <- function(P){
@@ -109,6 +115,9 @@ P_trans <- function(P){
 #transform the depth input (we should transform before the depth in pressure with oce library... J'ai pas eu le temps, SORRY)
 DATABASE_TRAIN$P <- P_trans(DATABASE_TRAIN$depth)
 DATABASE_VALID$P <- P_trans(DATABASE_VALID$depth)
+
+DATABASE_TRAIN <- select(DATABASE_TRAIN, - depth)
+DATABASE_VALID <- select(DATABASE_VALID, - depth)
 
 #Training subsets
 #input training subset
@@ -135,13 +144,16 @@ for(c in 1:dim(x_train)[2]){
 y_train <- 2/3 * (y_train-MEAN_DATA[14])/SD_DATA[14]
 y_valid <- 2/3 * (y_valid-MEAN_DATA[14])/SD_DATA[14]
 
-x_train$ratio <- y_train
+#x_train$ratio <- y_train
 #select best parameters
-tuned_parameters <- tune.svm(ratio~., data = x_train, gamma = 10^(-5:-1), cost = 10^(-3:1))
+#tuned_parameters <- tune.svm(ratio~., data = x_train, gamma = 10^(-5:-1), cost = 10^(-3:1)) # this take a while
+#summary(tuned_parameters)
 
+#x_train <- select(x_train, - ratio)
 
 #Train the model of support vector machine
-model <- svm(y_train~., data= select(x_train, -depth))
+model <- svm(y_train~., data= x_train)
+
 
 #predict the validation outputs ftom the validation input subset
 pred_valid <- predict(model, x_valid)
@@ -173,7 +185,78 @@ ggplot(data = DATABASE_VALID2) +
   geom_line(aes(x = log(Estimated_ratio), y = log(Estimated_ratio)), col = "Red")+
   theme_minimal()
 
-    ##create and save DATABASE TRAIN and VALID for NN training on lush
+
+# predict the ratio on the argo/HPLC database ####
+
+argo <- read_csv("DB_climato/Data/argo_climato")
+
+spectre <- read_excel("Biosope/Data/Spectres_annick.xlsx")
+spectre <- clean_names(spectre)
+
+#select the absorbtion at 440 and 470nm
+spectre440<- filter(spectre, lambda == 440)
+spectre470 <- filter(spectre, lambda == 470)
+
+#create columns that correspond to the total photosynthetic absorbance and non photosynthetic absorbance at 440 and 470. Create also a ratio between the two photosynthetic absorbtion
+argo <- argo %>% mutate(photo_440 = peri * spectre440$peri + but * spectre440$x19_bf + hex * spectre440$x19_hf + fuco * spectre440$fuco + allo * spectre440$allox + tchla * spectre440$chl_a,
+                        protect_440 = zea * spectre440$zea,
+                        photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + tchla * spectre470$chl_a,
+                        protect_470 = zea * spectre470$zea, 
+                        ratio_abs = photo_440/photo_470)
+
+Obs_ratio <- argo$ratio_abs
+
+argo$sin_lon <- sin(rad.lon(round(argo$lon,2)))
+argo$cos_lon <- cos(rad.lon(round(argo$lon,2)))
+
+argo$sin_doy <- sin(rad.doy(round(argo$doy)))
+argo$cos_doy <- cos(rad.doy(round(argo$doy)))
+
+
+#add to the database the logtransformation of rrs, mld and depth
+argo_predict <- argo %>%  mutate( log_rrs667 = log(rrs667),
+                   log_rrs555 = log(rrs555), log_rrs488 = log(rrs488),
+                   log_rrs443 = log(rrs443), log_rrs412 = log(rrs412),
+                   log_mld = log(mld), log_depth = log(depth),
+                   P = P_trans(depth)) %>% 
+  select(colnames(x_train))
+
+
+#centre and reduce each input
+for(c in 1:dim(argo_predict)[2]){
+  argo_predict[,c] <- 2/3 * (argo_predict[,c]-MEAN_DATA[c])/SD_DATA[c]
+}
+#centre and reduce each output
+# Obs_ratio <- 2/3 * (Obs_ratio-MEAN_DATA[14])/SD_DATA[14]
+
+
+pred_argo <- predict(model, argo_predict)
+
+#decentre annd denormalize the data and delogtransform the ratio for each the estimation and the observation
+Estimated_ratio <- 10.^(1.5*pred_argo*SD_DATA[14]+MEAN_DATA[14])
+
+
+
+
+RMSE <- rmse(sim = Estimated_ratio, obs = Obs_ratio)
+LM2 <- lm(log(Estimated_ratio)~log(Obs_ratio))
+SM2 <- summary(LM2)
+slope2 <- SM2$coefficients[2,1]
+intercept2 <- SM2$coefficients[1,1]
+R_squared2 <- SM2$adj.r.squared
+
+
+argo_predict <- cbind(argo_predict, Estimated_ratio,Obs_ratio)
+ggplot(data = argo_predict) +
+  geom_point(aes(x = log(Estimated_ratio), y = log(Obs_ratio)))+
+  geom_line(aes(x = log(Estimated_ratio), y = log(Estimated_ratio)), col = "Red")+
+  theme_minimal()
+
+#Correction of the fluo ####
+
+
+
+#create and save DATABASE TRAIN and VALID for NN training on lush####
 # 
 # P_trans <- function(P){
 #   P_trans <- P/2e4 + 1 / (1+exp(-P/300))^3

@@ -252,6 +252,11 @@ ggplot(data = argo_predict) +
   geom_line(aes(x = log(Estimated_ratio), y = log(Estimated_ratio)), col = "Red")+
   theme_minimal()
 
+ggplot(data = filter(argo_predict, Obs_ratio < 40)) +
+  geom_point(aes(y = Estimated_ratio, x = Obs_ratio))+
+  geom_line(aes(x = Estimated_ratio, y = Estimated_ratio), col = "Red")+
+  theme_minimal()
+
 #Correction of the fluo ####
 
 argo$ratio_estimated <- Estimated_ratio
@@ -261,6 +266,7 @@ argo <- argo %>% mutate(fitted_math = 13 * ratio_estimated^-1.83) #recompute the
 argo$fluo <- argo$chla_adjusted * 2
 #correct the fluorescence signal from there
 argo <- argo %>% mutate(corrected_fluo = fluo/fitted_math)
+
 
 #plot the corrected fluorescence
 
@@ -285,6 +291,10 @@ ggplot(argo)+
   geom_point(aes(x = tchla, y = corrected_fluo), colour = "Red")+
   geom_line(aes(x = tchla ,y = tchla))
 
+
+ggplot(argo)+
+  geom_point(aes(x = fluo/tchla, y = fitted_math))+
+  geom_line(aes(x = fluo/tchla, y = fluo/tchla), col = "red")
 #write_csv(argo, "DB_climato/argo_fluo_corrected")
 
 #create and save DATABASE TRAIN and VALID for NN training on lush####

@@ -1,0 +1,560 @@
+---
+title: "correction with absorption"
+author: "Flavien"
+date: "15/11/2019"
+output: html_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+
+```{r}
+library(tidyverse)
+library(sf)
+library(readxl)
+library(vegan)
+library(ggrepel)
+library(gridExtra)
+library(grid)
+library(nnls)
+library(FactoMineR)
+library(janitor)
+library(Metrics)
+library(maps)
+library(e1071)
+library(hydroGOF)
+library(sf)
+library(grid)
+```
+
+# The observation
+
+We can look at match up data between the fluorescence of the first BGC-Argo float profile and HPLC measurements. This insight indicate the bias we have when we estimate Chla concentration from fluorescence. Thus, the ratio [Chla]<sub>Fluo</sub>/[Chla]<sub>HPLC</sub> give us the factor by which we have to divide the fluorescence estimation to fit with HPLC Data. Currently the factor we use is the same for the whole ocean and is not taking time or depth in consideration (Roesler *et al.* 2017). <br>
+So we decided to present a new way of correcting the estimation of [Chla] by fluorescence that could take the variability of the bias into account. <br>
+From HPLC data we can compute the absorbtion of photosynthetical pigments a<sub>PS</sub>, by multiplying their concentration by their specific absorbtion in solution (Data from Bricaud and Claustre). Since the fluorometer excite at 470nm and the Chla maximum absorbtion is at 440nm we assume that the ratio between a<sub>PS</sub>440/a<sub>PS</sub>470 could be an index of the bias.<br>
+```{r}
+path = "Data/Longhurst"
+argo <- read_csv("Data/merged_argo")
+source("functions/outliers.R")
+source("functions/phi_simple.R")
+map_vec <- read_csv("Data/map_vec")
+pigments <- c("fuco", "peri", "hex", "but", "allo", "tchlb", "zea")
+NAT_IRS_list <- c("lovbio059c", "lovbio045b", "lovbio024c", "lovbio044b", "lovbio031c", "lovbio027b", "lovbio040b", "lovbio026c")
+
+
+argo <- filter(argo, !(lovbio == "takapm005b" & depth == 20))#remove an hplc match in a spike
+argo <- filter(argo, lovbio != "lovbio067c" & lovbio != "lovbio083d" & lovbio != "lovbio085d" & lovbio != "lovbio090d") #filter profile with only 1 match
+argo <- filter(argo, !(lovbio %in% NAT_IRS_list)) #filter dubious hplc in arctique
+
+
+longhurst_sf <- read_sf(dsn = path.expand(path), quiet = TRUE)
+
+names(longhurst_sf) <- c("code", "region", "geometry")
+
+#longhurst_sf %>% ggplot() + geom_sf(aes(fill = code))
+
+pnts_sf <- do.call("st_sfc",c(lapply(1:nrow(argo),
+                                     function(i) {st_point(as.numeric(argo[i,c("lon.y", "lat.y") ]))}), list("crs" = 4326))) 
+pnts_trans <- st_transform(pnts_sf, 4326)
+longhurst_trans <- st_transform(longhurst_sf, 4326)  
+argo$code <- apply(st_intersects(longhurst_trans, pnts_trans, sparse = FALSE), 2, 
+                     function(col) { 
+                       longhurst_trans[which(col), ]$code
+                     })
+#ggsave("argo/Plots/map.png")
+
+
+
+
+argo <- filter(argo, optical_layer < 4)
+
+
+
+nbr_match_region<- count(argo, "code")
+nbr_float_region <- argo %>% filter(duplicated(lovbio) == FALSE) %>% count("code")
+resume_region <- bind_cols(nbr_float_region, nbr_match_region) %>% dplyr::select(1,2,4)
+
+names(resume_region) <- c("code", "nbr_of_float", "nbr_of_match")
+
+
+argo <- argo %>% mutate(fluo = chla_adjusted * 2,
+                        ratio = fluo/tchla)
+
+influential <- outliers(select(argo, fluo, tchla, micro, nano, pico))
+
+#argo <- argo[-influential,]
+
+#lets mean the 7 profile of sarc because they all correspond to the same launch
+
+sarc <- argo %>% filter(code == "SARC") %>% group_by(depth) %>% summarise_all(mean) %>% ungroup()
+sarc$code <- "SARC"
+sarc$lovbio <- "lovbio_sarc"
+
+argo <- argo %>% filter(code != "SARC")
+argo <- bind_rows(argo, sarc)
+
+region_argo <- argo  %>% group_by(code) %>% summarise_at(vars(ratio), c(mean, sd), na.rm = TRUE) %>% ungroup()
+names(region_argo) <- c("code", "mean", "sd")
+
+region_argo <- left_join(region_argo, resume_region)
+
+region_argo$sd <- ifelse(region_argo$sd > region_argo$mean, region_argo$mean, region_argo$sd)
+
+codref <- read_excel("Data/Longhurst_Province_Summary.xls", 
+                     range = "A17:B70", col_names = FALSE)
+names(codref) <- c("code", "region")
+region_argo <- left_join(region_argo, codref)
+
+region_argo <- filter(region_argo, code != "ANTA")#delete this region because we only have 1 observation
+
+g_bar <- ggplot(region_argo)+
+  geom_col(aes(x = reorder(code, mean), y = mean, fill = code))+
+  geom_errorbar(aes(x = code, ymin = mean - sd, ymax = mean + sd))+
+  xlab("Province océanique")+
+  ylab("Fluo/[Chla]")+
+  geom_errorbar(aes(code, ymax = 1, ymin = 1),
+                size=1, linetype = "longdash", inherit.aes = F, width = 1)+
+  guides(fill = FALSE)+
+  scale_fill_brewer(palette = "Dark2")+
+  theme_bw(base_size = 16)+
+  ylim(0,9)
+
+#compute the absorbance ratio
+
+#open pigments absorbtion
+spectre <- read_excel("Biosope/Data/Spectres_annick.xlsx")
+spectre <- clean_names(spectre)
+
+#select the absorbtion at 440 and 470nm
+spectre440<- filter(spectre, lambda == 440)
+spectre470 <- filter(spectre, lambda == 470)
+
+#create columns that correspond to the total photosynthetic absorbance and non photosynthetic absorbance at 440 and 470. Create also a ratio between the two photosynthetic absorbtion
+argo<- argo %>% mutate(photo_440 = peri * spectre440$peri + but * spectre440$x19_bf + hex * spectre440$x19_hf + fuco * spectre440$fuco + allo * spectre440$allox + tchla * spectre440$chl_a,
+                              protect_440 = zea * spectre440$zea,
+                              photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + tchla * spectre470$chl_a,
+                              protect_470 = zea * spectre470$zea, 
+                              ratio_abs = photo_440/photo_470)
+
+#resume it by region
+region_argo_absorbance <- argo  %>% group_by(code) %>% summarise_at(vars(ratio_abs), c(mean, sd), na.rm = TRUE) %>% ungroup()
+names(region_argo_absorbance) <- c("code", "mean", "sd")
+
+region_argo_absorbance <- filter(region_argo_absorbance, code != "ANTA")#delete this region because we only have 1 observation
+
+#plot
+
+gabs <- ggplot(region_argo_absorbance)+
+  geom_col(aes(x = reorder(region_argo$code, region_argo$mean), y = mean, fill = code))+
+  geom_errorbar(aes(x = code, ymin = mean - sd, ymax = mean + sd))+
+  xlab("Province océanique")+
+  ylab("a440/a470")+
+  guides(fill = FALSE)+
+  scale_fill_brewer(palette = "Dark2")+
+  theme_bw(base_size = 16)
+
+grid.arrange(g_bar, gabs, ncol = 1)
+```
+
+<br>
+Here we see that the a<sub>PS</sub>440/a<sub>PS</sub>470 ratio is effictively linked to the bias of the estimation of [Chla] by fluorescence. Though, it can be a bias of visualisation because we group data by bioregion and we mean it.<br>
+We can look at it by a more precise way : 
+```{r}
+argo <- argo[!is.na(argo$ratio_abs),]
+exponential_model <- nls(ratio~(b*ratio_abs^-a), data = argo, start = list(a = 0.5, b = 1))
+
+argo <- argo %>% mutate(fitted_math = 13 * ratio_abs^-1.83) #recompute the estimated values
+
+#plot the estimation
+ggplot(argo)+
+  geom_point(aes(x = ratio_abs, y = ratio, colour = depth))+
+  geom_line(aes(x = ratio_abs, y = fitted_math))+
+  geom_text(aes(x = 5, y = 10, label = "Y = 13X^-1.83"))+
+  geom_text(aes(x = 5, y = 9.3, label = "R² : 0.43"))+
+  ylab("fluo/[Chla]")+
+  xlab("rapport a440/a470")+
+  scale_color_viridis_c()+
+  theme_classic()
+```
+<br>
+We show here a non linear correlation between the two variables. This mean that we can estimate the bias (aka the correction factor) from the  ratio of photosynthetical absorbtion.<br>
+From there we try to correct the fluorescence, which give us this result : 
+```{r}
+argo <- argo %>% mutate(corrected_fluo = fluo/fitted_math)
+a <- rmse(argo$tchla, argo$chla_adjusted)
+b <- rmse(argo$tchla, argo$corrected_fluo)
+
+#plot the corrected fluorescence
+argo <- argo[!is.na(argo$ratio),]
+ggplot(argo)+
+  geom_point(aes(x = log(tchla), y = log(fluo), colour = "Current estimation"))+
+  geom_point(aes(x = log(tchla), y = log(corrected_fluo), colour = "Corrected Fluorescence"))+
+  geom_line(aes(x = log(tchla) ,y = log(tchla)))+
+  geom_text(aes(x = -0.6, y = -3.6, label = "RMSE current observation = 0.5"))+
+  geom_text(aes(x = -0.5, y = -3.3, label = "RMSE corrected fluorescence = 0.3"))+
+  theme_minimal()
+```
+<br>
+This result leads us to think that it is possible to rely on the a<sub>PS</sub>440/a<sub>PS</sub>470 ratio to correct the [Chla] estimation from fluorescence. <br>
+We need a way to estimate this ratio anywhere the float isconsidering time and depth. <br>
+For this we choose the classification method called Support Vector Machine. This tool will be trained with a global HPLC database that is coupled with climatological data. The choice of climatological data has been made to be sure to conserv all our HPLC sample and not loose any information due to cloud coverage. <br>
+The map of HPLC observation is the one below.
+```{r}
+dir_data <- "DB_climato/Data/"
+dir_plot <- "DB_climato"
+
+#load database Flavien
+database <- read.table(paste(dir_data,"database_final",sep=""),h=T,sep=",")
+
+#remove ratio = NA and PAR = NA
+database <- database[!is.na(database$ratio),]
+database <- database[!is.na(database$par),]
+
+#Transform ratio in lo because lognormal distribution
+database$logratio <- log10(database$ratio)
+
+#add a N to each porfile with unique lon/lat/date
+LON_LAT_DATE <- unique(database[,1:5])
+dim(LON_LAT_DATE) #1728 profiles
+LON_LAT_DATE$N <- 1:length(LON_LAT_DATE[,1])
+#add this N profile to the database
+database <- merge(database,LON_LAT_DATE)
+
+
+#function to transform in radians the longitude and doy (circular variables)
+rad.lon <- function(lon){
+  radians <- (lon*pi)/180
+  radians
+}
+rad.doy <- function(dat){
+  radians <- (dat*pi)/182.5
+  radians
+}
+
+#use sin and cos of lon and doy radians as inputs (see Sauzede et al. 2015 for details)
+database$sin_lon <- sin(rad.lon(round(database$lon,2)))
+database$cos_lon <- cos(rad.lon(round(database$lon,2)))
+
+database$sin_doy <- sin(rad.doy(round(database$doy)))
+database$cos_doy <- cos(rad.doy(round(database$doy)))
+
+#seperate randomly the database in 80% of the data used for the training and 20% for the validation
+set.seed(123)
+iii_data_train <- sample(1:length(LON_LAT_DATE[,1]), round(0.8 * length(LON_LAT_DATE[,1])))
+iii_data_train <- sort(iii_data_train)
+
+
+#add to the database the logtransformation of rrs, mld and depth
+database <- mutate(.data = database, log_rrs667 = log(rrs667),
+                   log_rrs555 = log(rrs555), log_rrs488 = log(rrs488),
+                   log_rrs443 = log(rrs443), log_rrs412 = log(rrs412),
+                   log_mld = log(mld), log_depth = log(depth))
+
+#create the database with the inputs that we want to have in our model (save the N for the separation between training and validation profiles)
+database2 <- database[,c("N","depth","sin_lon","cos_lon","sin_doy","cos_doy","lat","par", "log_rrs667", "log_rrs555", 
+
+                                                  "log_rrs488", "log_rrs443", "log_rrs412", "log_mld", "logratio")]
+
+database2 <- database2[!is.na(database2$log_rrs667),]
+
+
+#seperate the database for training and validation and remove the N input
+DATABASE_TRAIN <- database2[database2$N %in% iii_data_train,-1]
+DATABASE_VALID <- database2[!database2$N %in% iii_data_train,-1]
+
+
+
+ggplot()+
+  geom_point(aes(x = lon, y= lat, colour = "training"), data = filter(database, N %in% iii_data_train))+
+  geom_point(aes(x = lon, y= lat, colour = "validation"), data = filter(database, ! N %in% iii_data_train))+
+  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
+  scale_color_manual(values = c("turquoise4", "violetred3"))+
+  theme_minimal()+
+  coord_quickmap()
+```
+
+<br>
+The Data we included are listed below :<br>
+<li>rrs667</li>
+<li>rrs555</li>
+<li>rrs488</li>
+<li>rrs443</li>
+<li>rrs412</li>
+<li>MLD</li>
+<li>PAR</li>
+<li>Depth</li><br>
+Those are climatological values that have been computed every month on a grid of 9km (downloaded <a href="https://oceandata.sci.gsfc.nasa.gov/MODIS-Aqua/Mapped/Monthly_Climatology/9km/">Here</a>)<br>
+A quality controle have been applied on HPLC data : 
+<li>Only lov HPLC data have been chose</li>
+<li>Profiles with more than 4 points</li>
+<li>Profiles with the first measurement in the first 10m and the last one below the Zeu</li>
+<li>Profiles with more than 500m depth</li>
+<li>Profiles that are not in the argo/HPLC matchup databse </li><br>
+Finally we have 1728 profiles in our databse, including 1382 profiles for training set and 346 for the validation.<br>
+
+# SVM model
+
+```{r}
+#funcion to transform the pressure input as in Sauzede et al. 2017 and Bittig et al. 2018 (CANYON method)
+P_trans <- function(P){
+  P_trans <- P/2e4 + 1 / (1+exp(-P/300))^3
+  return(P_trans)
+}
+
+#transform the depth input (we should transform before the depth in pressure with oce library... J'ai pas eu le temps, SORRY)
+DATABASE_TRAIN$P <- P_trans(DATABASE_TRAIN$depth)
+DATABASE_VALID$P <- P_trans(DATABASE_VALID$depth)
+
+DATABASE_TRAIN <- select(DATABASE_TRAIN, - depth)
+DATABASE_VALID <- select(DATABASE_VALID, - depth)
+
+#Training subsets
+#input training subset
+x_train <- subset(DATABASE_TRAIN, select = -logratio)
+#output training subset
+y_train <- DATABASE_TRAIN$logratio
+
+#Validation subsets
+#input validation subset
+x_valid <- subset(DATABASE_VALID, select = -logratio)
+#output validation subset
+y_valid <- DATABASE_VALID$logratio
+
+#compute mean and standard deviation to centre and reduce the inputs and outputs using the TRAINING data only
+MEAN_DATA <- c(apply(x_train,2, mean), mean(y_train)) 
+SD_DATA <- c(apply(x_train,2, sd), mean(y_train)) 
+
+#centre and reduce each input
+for(c in 1:dim(x_train)[2]){
+  x_train[,c] <- 2/3 * (x_train[,c]-MEAN_DATA[c])/SD_DATA[c]
+  x_valid[,c] <- 2/3 * (x_valid[,c]-MEAN_DATA[c])/SD_DATA[c]
+}
+#centre and reduce each output
+y_train <- 2/3 * (y_train-MEAN_DATA[14])/SD_DATA[14]
+y_valid <- 2/3 * (y_valid-MEAN_DATA[14])/SD_DATA[14]
+
+#x_train$ratio <- y_train
+#select best parameters
+#tuned_parameters <- tune.svm(ratio~., data = x_train, gamma = 10^(-5:-1), cost = 10^(-3:1)) # this take a while
+#summary(tuned_parameters) best parameters gamma = 0.1 & cost = 1, but if we take default ettings we have better rmse and R²
+
+#x_train <- select(x_train, - ratio)
+
+#Train the model of support vector machine
+model <- svm(y_train~., data= x_train)
+
+
+#predict the validation outputs ftom the validation input subset
+pred_valid <- predict(model, x_valid)
+
+#decentre annd denormalize the data and delogtransform the ratio for each the estimation and the observation
+Estimated_ratio <- 10.^(1.5*pred_valid*SD_DATA[14]+MEAN_DATA[14])
+Obs_ratio <- 10.^(1.5*y_valid*SD_DATA[14]+MEAN_DATA[14])
+
+#compute statistics
+RMSE <- rmse(sim = Estimated_ratio, obs = Obs_ratio)
+LM2 <- lm(log(Estimated_ratio)~log(Obs_ratio))
+SM2 <- summary(LM2)
+slope2 <- SM2$coefficients[2,1]
+intercept2 <- SM2$coefficients[1,1]
+R_squared2 <- SM2$adj.r.squared
+
+
+#ggplot scatterplot to have the colour for depth --> to improve!
+DATABASE_VALID2 <- cbind(DATABASE_VALID,Estimated_ratio,Obs_ratio)
+ggplot(data = DATABASE_VALID2) +
+  geom_point(aes(x = log(Estimated_ratio), y = log(Obs_ratio)))+
+  geom_line(aes(x = log(Estimated_ratio), y = log(Estimated_ratio)), col = "Red")+
+  geom_text(aes(x = 0.5, y = 3, label = paste("R² = ", round(R_squared2, 2), sep = "")))+
+  geom_text(aes(x = 0.5, y = 2.80, label = paste("RMSE = ", round(RMSE, 2), sep = "")))+
+  theme_minimal()
+```
+
+So the prediction by the SVM is good with a nice fit and a relatively small error (RMSE). Nevertheless we can observe some outlayers that are not well predicted by our model. Anyway we will now apply this model on our database of matchup between HPLC measurement and Argo float fluorescence. Then, from this prediction of the a<sub>PS</sub>440/a<sub>PS</sub>470 ratio we will try to correct the [Chla] estimation with the formula we fitted previously.<br>
+```{r}
+argo <- read_csv("DB_climato/Data/argo_climato")
+
+spectre <- read_excel("Biosope/Data/Spectres_annick.xlsx")
+spectre <- clean_names(spectre)
+
+#select the absorbtion at 440 and 470nm
+spectre440 <- filter(spectre, lambda == 440)
+spectre470 <- filter(spectre, lambda == 470)
+
+#create columns that correspond to the total photosynthetic absorbance and non photosynthetic absorbance at 440 and 470. Create also a ratio between the two photosynthetic absorbtion
+argo <- argo %>% mutate(photo_440 = peri * spectre440$peri + but * spectre440$x19_bf + hex * spectre440$x19_hf + fuco * spectre440$fuco + allo * spectre440$allox + tchla * spectre440$chl_a,
+                        protect_440 = zea * spectre440$zea,
+                        photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + tchla * spectre470$chl_a,
+                        protect_470 = zea * spectre470$zea, 
+                        ratio_abs = photo_440/photo_470)
+
+Obs_ratio <- argo$ratio_abs
+
+argo$sin_lon <- sin(rad.lon(round(argo$lon,2)))
+argo$cos_lon <- cos(rad.lon(round(argo$lon,2)))
+
+argo$sin_doy <- sin(rad.doy(round(argo$doy)))
+argo$cos_doy <- cos(rad.doy(round(argo$doy)))
+
+
+#add to the database the logtransformation of rrs, mld and depth
+argo_predict <- argo %>%  mutate( log_rrs667 = log(rrs667),
+                   log_rrs555 = log(rrs555), log_rrs488 = log(rrs488),
+                   log_rrs443 = log(rrs443), log_rrs412 = log(rrs412),
+                   log_mld = log(mld), log_depth = log(depth),
+                   P = P_trans(depth)) %>% 
+  select(colnames(x_train))
+
+
+#centre and reduce each input
+for(c in 1:dim(argo_predict)[2]){
+  argo_predict[,c] <- 2/3 * (argo_predict[,c]-MEAN_DATA[c])/SD_DATA[c]
+}
+#centre and reduce each output
+# Obs_ratio <- 2/3 * (Obs_ratio-MEAN_DATA[14])/SD_DATA[14]
+
+
+pred_argo <- predict(model, argo_predict)
+
+#decentre annd denormalize the data and delogtransform the ratio for each the estimation and the observation
+Estimated_ratio <- 10.^(1.5*pred_argo*SD_DATA[14]+MEAN_DATA[14])
+
+
+
+
+RMSE <- rmse(sim = Estimated_ratio, obs = Obs_ratio)
+LM2 <- lm(log(Estimated_ratio)~log(Obs_ratio))
+SM2 <- summary(LM2)
+slope2 <- SM2$coefficients[2,1]
+intercept2 <- SM2$coefficients[1,1]
+R_squared2 <- SM2$adj.r.squared
+
+
+argo_predict <- cbind(argo_predict, Estimated_ratio,Obs_ratio)
+ggplot(data = argo_predict) +
+  geom_point(aes(x = log(Estimated_ratio), y = log(Obs_ratio)))+
+  geom_line(aes(x = log(Estimated_ratio), y = log(Estimated_ratio)), col = "Red")+
+  geom_text(aes(x = 0.5, y = 2, label = paste("R² = ", round(R_squared2, 2), sep = "")))+
+  geom_text(aes(x = 0.5, y = 1.7, label = paste("RMSE = ", round(RMSE, 2), sep = "")))+
+  theme_minimal()+
+  ylim(0,3)
+```
+We observe there a low R² and a significativ error, certainly due to outlyers that we can spot on the plot. Nevertheless we can see that a part of the values have been quite well predicted. Our quantification of error is sensitiv to outliers.<br>
+We can still test a correction of the fluorescence based on this prediction to see what happen. <br>
+# Correction 
+```{r}
+argo$ratio_estimated <- Estimated_ratio
+
+argo <- argo %>% mutate(fitted_math = 13 * ratio_estimated^-1.83) #recompute the estimated values
+
+argo$fluo <- argo$chla_adjusted * 2
+#correct the fluorescence signal from there
+argo <- argo %>% mutate(corrected_fluo = fluo/fitted_math)
+
+
+#plot the corrected fluorescence
+
+ggplot(argo)+
+  geom_point(aes(x = log(tchla), y = log(fluo), colour = "[Chla] fluo"))+
+  geom_point(aes(x = log(tchla), y = log(corrected_fluo), colour = "[Chla] fluo corrected"))+
+  geom_line(aes(x = log(tchla) ,y = log(tchla)))+
+  theme_minimal()
+
+a <- rmse_corrected <- rmse(argo$corrected_fluo, argo$tchla)
+b <- rmse_adjusted <- rmse(argo$chla_adjusted, argo$tchla)
+
+
+ggplot(argo)+
+  geom_point(aes(x = tchla, y = fluo, colour = "[Chla] fluo"))+
+  geom_point(aes(x = tchla, y = corrected_fluo, colour = "[Chla] fluo corrected"))+
+  geom_line(aes(x = tchla ,y = tchla))+
+  theme_minimal()
+```
+
+The RMSE of the corrected estimation of Chla is 0.26 whereas the RMSE of non corrected estimation of Chla is 0.55. This means that we improved the estimation of Chla. BUT do we really take the variabilty into account ?<br>
+To test that we can first check the distribution of our correction factor, and then test the quality of correction by a constent.<br>
+```{r}
+hist(argo$fitted_math)
+```
+
+We have a distribution that looks normal and centered around 3. One problem is that the minimum value of the correction factor is 1.6, despite the fact that some region have an underestimation of Chla by fluorescence. So this correction is not suitable for oligotrophic region that have a Fluo/Chla close/or lower to 1... <br>
+The second problem can be simply observed, by the performance of a correction by a factor 3, which correspond to the center of the distribution of our normal distribution.
+
+
+```{r}
+ggplot(argo)+
+  geom_point(aes(x = log(tchla), y = log(fluo), colour = "[Chla] fluo"))+
+  geom_point(aes(x = log(tchla), y = log(fluo/3), colour = "[Chla] fluo /3"))+
+  geom_line(aes(x = log(tchla) ,y = log(tchla)))
+
+a <- rmse_corrected <- rmse(argo$fluo / 3, argo$tchla)
+b <- rmse_adjusted <- rmse(argo$chla_adjusted, argo$tchla)
+```
+
+The RMSE of the correction by this factor is 0.32, so it also improve the quality of our estimation. This seems to indicate that our method improve the [Chla] estimation because the correction factor we calculate is between 1.6 and 5 which is reasonable for the overestimation we are facing.<br>
+Finally, to picture it we can plot the Fluo/[Chla] ratio by region before and after the correction.<br>
+```{r}
+argo <- read_csv("DB_climato/Data/argo_fluo_corrected")
+path = "Data/Longhurst"
+longhurst_sf <- read_sf(dsn = path.expand(path), quiet = TRUE)
+
+names(longhurst_sf) <- c("code", "region", "geometry")
+
+#longhurst_sf %>% ggplot() + geom_sf(aes(fill = code))
+
+pnts_sf <- do.call("st_sfc",c(lapply(1:nrow(argo),
+                                     function(i) {st_point(as.numeric(argo[i,c("lon.y", "lat.y") ]))}), list("crs" = 4326))) 
+pnts_trans <- st_transform(pnts_sf, 4326)
+longhurst_trans <- st_transform(longhurst_sf, 4326)  
+argo$code <- apply(st_intersects(longhurst_trans, pnts_trans, sparse = FALSE), 2, 
+                   function(col) { 
+                     longhurst_trans[which(col), ]$code
+                   })
+
+#lets mean the 7 profile of sarc because they all correspond to the same launch
+
+sarc <- argo %>% filter(code == "SARC") %>% group_by(depth) %>% summarise_all(mean) %>% ungroup()
+sarc$code <- "SARC"
+sarc$lovbio <- "lovbio_sarc"
+
+argo <- argo %>% filter(code != "SARC")
+argo <- bind_rows(argo, sarc)
+
+region_argo <- argo  %>% mutate(ratio_clean = corrected_fluo/tchla, ratio = fluo/tchla) %>%  group_by(code) %>% summarise_at(vars(c(ratio, ratio_clean, fitted_math)), c(mean, sd), na.rm = TRUE) %>% ungroup()
+names(region_argo) <- c("code", "mean_ratio", "mean_ratio_clean", "mean_factor", "sd_ratio", "sd_ratio_clean", "sd_factor")
+
+region_argo <- left_join(region_argo, resume_region)
+
+
+
+
+g1 <- ggplot(region_argo)+
+  geom_col(aes(x = reorder(code, mean_ratio), y = mean_ratio, fill = code))+
+  geom_errorbar(aes(x = code, ymin = mean_ratio - sd_ratio, ymax = mean_ratio + sd_ratio))+
+  xlab("Province océanique")+
+  ylab("Rapport Fluo/Chla")+
+  geom_errorbar(aes(code, ymax = 1, ymin = 1),
+                size=1, linetype = "longdash", inherit.aes = F, width = 1)+
+  guides(fill = FALSE)+
+  scale_fill_brewer(palette = "Dark2")+
+  theme_bw(base_size = 20)+
+  ylim(0,9)
+
+g2 <- ggplot(region_argo)+
+  geom_col(aes(x = reorder(code, mean_ratio), y = mean_ratio_clean, fill = code))+
+  geom_errorbar(aes(x = code, ymin = mean_ratio_clean - sd_ratio_clean, ymax = mean_ratio_clean + sd_ratio_clean))+
+  xlab("Province océanique")+
+  ylab("Rapport Fluo/Chla")+
+  geom_errorbar(aes(code, ymax = 1, ymin = 1),
+                size=1, linetype = "longdash", inherit.aes = F, width = 1)+
+  guides(fill = FALSE)+
+  scale_fill_brewer(palette = "Dark2")+
+  theme_bw(base_size = 20)+
+  ylim(0,9)
+
+grid.arrange(g1,g2, ncol = 1)
+```
+<br>Most of the regions have a Fluo/Chla value lower than 1 now, which show that our method use a correction factor that is too high and not adapted to all regions.

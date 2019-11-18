@@ -296,7 +296,7 @@ ggplot(argo)+
 ggplot(argo)+
   geom_point(aes(x = fluo/tchla, y = fitted_math))+
   geom_line(aes(x = fluo/tchla, y = fluo/tchla), col = "red")
-#write_csv(argo, "DB_climato/argo_fluo_corrected")
+#write_csv(argo, "DB_climato/Data/argo_fluo_corrected")
 
 #create and save DATABASE TRAIN and VALID for NN training on lush####
 # 

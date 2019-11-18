@@ -261,7 +261,8 @@ ggplot(data = filter(argo_predict, Obs_ratio < 40)) +
 
 argo$ratio_estimated <- Estimated_ratio
 
-argo <- argo %>% mutate(fitted_math = 13 * ratio_estimated^-1.83) #recompute the estimated values
+argo <- argo %>% mutate(fitted_math = 13 * ratio_estimated^-1.83,
+                        fitted_math_obs = 13 * ratio_abs^-1.83) #recompute the estimated values
 
 argo$fluo <- argo$chla_adjusted * 2
 #correct the fluorescence signal from there

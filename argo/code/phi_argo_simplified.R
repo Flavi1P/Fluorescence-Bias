@@ -33,7 +33,7 @@ phi_argo <- phi_simple(merged_argo, variable = "fluo")
 phi_argo$phi <- ifelse(phi_argo$size == "pico", 0, phi_argo$phi)
 phi_argo$se <- ifelse(phi_argo$se > phi_argo$phi, phi_argo$phi, phi_argo$se)
 
-phi_argo$optical_layer <- c(rep("0-0.5 z/ze", 3), rep("0.5-1 z/ze", 3), rep("1-1.5 z/ze",3))
+phi_argo$optical_layer <- c(rep(1, 3), rep(2, 3), rep(3, 3))
 
 ggplot(phi_argo, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   geom_bar(position=position_dodge(), stat="identity") +
@@ -42,9 +42,9 @@ ggplot(phi_argo, aes(x=size, y = phi, fill = as.factor(optical_layer))) +
   ylab("Rendement de fluorescence")+ xlab("Classe de taille") +
   theme_bw(base_size = 18)
 
-ggsave("argo/Plots/phi_argo.png")
+#ggsave("argo/Plots/phi_argo.png")
 
-  phi_argo <- phi_argo %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)
+phi_argo <- phi_argo %>% select(phi, optical_layer, size) %>% spread(key = size, value = phi)
 names(phi_argo) <- c("optical_layer", "phi_micro", "phi_nano", "phi_pico") 
 
 

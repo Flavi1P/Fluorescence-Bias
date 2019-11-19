@@ -1,13 +1,12 @@
-# stageM2
+# Fluorescence Bias
 <head>
-Organisation des fichiers </br> 
+This repo contains diffrent scripts I use to determinate the main reason of in situ fluorescence variability and the way we can correct it </br> 
 </head>
 <ul type = "disc">
   <body>
-<li><b>1 dossier par campagne</b>. Dans chaque dossier se trouve un fichier readme qui donne la structure interne </li>
+<li>Each folder correspond to a proper databse with its own analysis</li>
 </br>
-<li>Le dossier  "<b>Global Dataset</b>" correspond à une combinaison des données Biosope/Boussole/Soclim/Oiso/Keops.</li>
-</br>
-<li>Le dossier "<b>functions</b>" contient les codes des fonctions que j'utilise, avec une explication de ce qu'elles font.</li>
+  <li> The "<b>DB_climato</b>" folder is an approach of fluorescence correction by a support vector machine model.
+<li>The "<b>functions</b>" folder contains the functions that are used in the different scripts</li>
 </ul>
 </body>

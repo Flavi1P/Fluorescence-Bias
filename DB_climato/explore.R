@@ -21,6 +21,9 @@ hplc <- hplc %>% mutate(photo_430 = peri * spectre430$peri + but * spectre430$x1
 
 hplc <- mutate(hplc, tchla = chla + dv_chla)
 
+hplc$system <- ifelse(hplc$ze_morel > hplc$mld, "Stratified", "Mixed")
+
+
 ggplot(hplc)+
   geom_point(aes(x = tchla, y = photo_440, colour = "aps 440"))+
   geom_point(aes(x = tchla, y = photo_470, colour = "aps 470"))+
@@ -28,9 +31,12 @@ ggplot(hplc)+
   geom_point(aes(x = tchla, y = photo_532, colour = "aps 532"))+
   scale_color_brewer(palette = "Dark2")+
   theme_bw()
-  
-  
-hplc$system <- ifelse(hplc$ze_morel > hplc$mld, "Stratified", "Mixed")
+
+ggplot(hplc)+
+  geom_point(aes(x = tchla, y = photo_470, colour = system))+
+  scale_color_brewer(palette = "Dark2")+
+  theme_bw()  
+
 
 ggplot(hplc)+
   geom_point(aes(x = lon, y = lat, colour = system))+

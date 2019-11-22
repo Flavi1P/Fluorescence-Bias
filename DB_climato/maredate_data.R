@@ -13,7 +13,7 @@ colnames(maredat)
 #we use the merged depth which is a merge between pressure and depth in meter, where pressure given priority if both given
 
 maredat_short <- maredat %>% select(database_num, sample_num, exp, ctd, bottle_num, lat, long, month, day, year, merged_depth_m,
-                                    number_of_pigments, total_chla_mg_m3, chla_ng_l, dv_chla_ng_l, x19hex_ng_l, x19but_ng_l, fucox_ng_l, perid_ng_l, allox_ng_l) %>% 
+                                    number_of_pigments, total_chla_mg_m3, chla_ng_l, dv_chla_ng_l, x19hex_ng_l, x19but_ng_l, fucox_ng_l, perid_ng_l, allox_ng_l, zeax_ng_l) %>% 
   mutate(depth = merged_depth_m,
          tchla = total_chla_mg_m3,
          chla = chla_ng_l * 1000,
@@ -22,8 +22,9 @@ maredat_short <- maredat %>% select(database_num, sample_num, exp, ctd, bottle_n
          but = x19but_ng_l * 1000,
          fuco = fucox_ng_l * 1000,
          peri = perid_ng_l * 1000,
-         allo = allox_ng_l * 1000) %>% 
-  select(- merged_depth_m, - chla_ng_l, - dv_chla_ng_l, - x19hex_ng_l, - x19but_ng_l, - fucox_ng_l, - perid_ng_l, - allox_ng_l)
+         allo = allox_ng_l * 1000,
+         zea = zeax_ng_l * 1000) %>% 
+  select(- merged_depth_m, - chla_ng_l, - dv_chla_ng_l, - x19hex_ng_l, - x19but_ng_l, - fucox_ng_l, - perid_ng_l, - allox_ng_l, - zeax_ng_l)
 
 #compute the sum of my pigment, if Na return, then unusable sample
 

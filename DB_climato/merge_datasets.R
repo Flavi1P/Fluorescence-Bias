@@ -12,8 +12,8 @@ lov$date <- ymd(paste(lov$year, lov$month, lov$day, "-"))
 maredat$date <- ymd(paste(maredat$year, maredat$month, maredat$day, "-"))
 
 #select the same columns in each dataset
-lov <- lov %>% select(date, lon, lat, depth, peri, but, fuco, hex, allo, dv_chla, chla)
-maredat <- maredat %>% select(date, "lon" = long, lat, depth, peri, but, fuco, hex, allo, dv_chla = dvchla, chla)
+lov <- lov %>% select(date, lon, lat, depth, peri, but, fuco, hex, allo, zea, dv_chla, chla)
+maredat <- maredat %>% select(date, "lon" = long, lat, depth, peri, but, fuco, hex, allo, zea, dv_chla = dvchla, chla)
 
 #create one unique dataframe
 combine_hplc <- bind_rows(lov, maredat)

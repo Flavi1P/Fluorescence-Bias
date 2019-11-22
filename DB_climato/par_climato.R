@@ -409,7 +409,7 @@ hplc_qc <- hplc_qc %>% mutate(photo_440 = peri * spectre440$peri + but * spectre
 
 hplc_qc$doy <- yday(hplc_qc$date)#compute day of year
 
-hplc_qc <- select(hplc_qc, date, doy, month, everything(), -test, - profile_id, - dataset, - ze_monte_carlo, )
+hplc_qc <- select(hplc_qc, date, doy, month, everything(), - profile_id, - ze_monte_carlo, )
 
 #we can see that we have outlyers in our dataset. It comes from the fact that we do not have any concentration of accessory pigments.
 ggplot(hplc_qc)+

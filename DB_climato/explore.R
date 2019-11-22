@@ -3,6 +3,7 @@ library(FactoMineR)
 library(patchwork)
 library(janitor)
 library(readxl)
+library(wesanderson)
 
 hplc <- read_csv("DB_climato/Data/database_final")
 map <- read_csv("Data/map_vec")
@@ -23,19 +24,39 @@ hplc <- mutate(hplc, tchla = chla + dv_chla)
 
 hplc$system <- ifelse(hplc$ze_morel > hplc$mld, "Stratified", "Mixed")
 
+coeff430 <- summary(lm(photo_430~tchla, data = hplc))$coefficient[2,1]
+coeff440 <- summary(lm(photo_440~tchla, data = hplc))$coefficient[2,1]
+coeff470 <- summary(lm(photo_470~tchla, data = hplc))$coefficient[2,1]
+coeff532 <- summary(lm(photo_532~tchla, data = hplc))$coefficient[2,1]
+
+r430 <- summary(lm(photo_430~tchla, data = hplc))$adj.r.squared
+r440 <- summary(lm(photo_440~tchla, data = hplc))$adj.r.squared
+r470 <- summary(lm(photo_470~tchla, data = hplc))$adj.r.squared
+r532 <- summary(lm(photo_532~tchla, data = hplc))$adj.r.squared
+
+
+
+
+
 
 ggplot(hplc)+
-  geom_point(aes(x = tchla, y = photo_440, colour = "aps 440"))+
-  geom_point(aes(x = tchla, y = photo_470, colour = "aps 470"))+
-  geom_point(aes(x = tchla, y = photo_430, colour = "aps 430"))+
-  geom_point(aes(x = tchla, y = photo_532, colour = "aps 532"))+
-  scale_color_brewer(palette = "Dark2")+
-  theme_bw()
+  geom_point(aes(x = tchla, y = photo_440, colour = "440"))+
+  geom_smooth(aes(x = tchla, y = photo_440, colour = "440"), se = FALSE, method = "lm", show.legend = FALSE)+
+  geom_text(aes(x = 2, y = 0.5, label = paste("slope :", round(coeff440, 2), "; R² :", round(r440, 2), sep = " "), colour = "440"), show.legend = FALSE)+
+  geom_point(aes(x = tchla, y = photo_470, colour = "470"))+
+  geom_smooth(aes(x = tchla, y = photo_470, colour = "470"), se = FALSE, method = "lm", show.legend = FALSE)+
+  geom_text(aes(x = 2, y = 0.47, label = paste("slope :", round(coeff430, 2),"; R² :", round(r430, 2), sep = " "), colour = "430"), show.legend = FALSE)+
+  geom_point(aes(x = tchla, y = photo_430, colour = "430"))+
+  geom_smooth(aes(x = tchla, y = photo_430, colour = "430"), se = FALSE, method = "lm", show.legend = FALSE)+
+  geom_text(aes(x = 2, y = 0.44, label = paste("slope :", round(coeff470, 2), "; R² :", round(r470, 2), sep = " "), colour = "470"), show.legend = FALSE)+
+  geom_point(aes(x = tchla, y = photo_532, colour = "532"))+
+  geom_smooth(aes(x = tchla, y = photo_532, colour = "532"), se = FALSE, method = "lm", show.legend = FALSE)+
+  geom_text(aes(x = 2, y = 0.41, label = paste("slope :", round(coeff532, 2), "; R² :", round(r532, 2), sep = " "), colour = "532"), show.legend = FALSE)+
+  scale_color_manual(values = wes_palette("Darjeeling2"))+
+  ylab("Photosynthetical absorbtion")+
+  labs(color = "Wavelength")+
+  theme_classic()
 
-ggplot(hplc)+
-  geom_point(aes(x = tchla, y = photo_470, colour = system))+
-  scale_color_brewer(palette = "Dark2")+
-  theme_bw()  
 
 
 ggplot(hplc)+

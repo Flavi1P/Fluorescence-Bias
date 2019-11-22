@@ -348,10 +348,11 @@ for(i in unique(hplc_open_ocean$nprof)){
 
 #ze####
 
-hplc <- read_csv("DB_climato/Data/database_final")
+# hplc <- read_csv("DB_climato/Data/database_final")
 source("functions/fonction_calcul_Ze_Monte_Carlo.r")
 source("functions/zeu_moma.R")
 
+hplc <- hplc_open_ocean
 
 
 hplc$ze_monte_carlo <- NA
@@ -397,7 +398,7 @@ ggplot()+
 
 #open pigments absorbtion
 spectre <- read_excel("Biosope/Data/Spectres_annick.xlsx")
-spectre <- clean_names(spectre)
+spectre <- janitor::clean_names(spectre)
 
 #select the absorbtion at 440 and 470nm
 spectre440<- filter(spectre, lambda == 440)

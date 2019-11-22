@@ -57,12 +57,34 @@ ggplot(hplc)+
   labs(color = "Wavelength")+
   theme_classic()
 
-
-
 ggplot(hplc)+
   geom_point(aes(x = lon, y = lat, colour = system))+
-  geom_path(aes(x = long, y = lat, group = group), data = map)+
-  coord_quickmap()
+  geom_polygon(aes(x = long, y = lat, group = group), data = map)+
+  coord_map(projection = "gilbert")+
+  theme_bw()
+
+hplc_resumed <- mutate(hplc, zze = depth/ze_morel,
+               zone = ifelse(zze < 0.5, "surface", "depth")) %>% 
+  group_by(nprof, zone, system) %>% 
+  summarise_if(is.numeric, mean, na.rm = TRUE) %>% 
+  ungroup()
+
+system_info <- hplc_resumed %>% group_by(system, zone) %>% 
+  summarise_if(is.numeric, c(mean, sd)) %>% 
+  ungroup()
+
+ggplot(system_info)+
+  geom_col(aes(x = zone, y = tchla_fn1, fill = system), position = "dodge")+
+  geom_errorbar(aes(x = zone, ymin = tchla_fn1 - tchla_fn2, ymax = tchla_fn1 + tchla_fn2, fill = system), position = "dodge")+
+  theme_classic()+
+  scale_fill_manual(values = wes_palette("Darjeeling2"))
+
+for(i in unique(hplc$nprof)){
+g <- hplc %>% filter(nprof == 299) %>% 
+    ggplot()+
+    geom_point(aes(x = tchla, y = -depth))
+print(g)
+}
 
 ggplot(hplc)+
   geom_point(aes(x = tchla, y = ratio))+

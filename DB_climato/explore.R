@@ -1,4 +1,4 @@
-library(tidyvers)
+library(tidyverse)
 library(FactoMineR)
 library(patchwork)
 library(janitor)
@@ -61,6 +61,23 @@ ggplot(hplc)+
   geom_point(aes(x = lon, y = lat, colour = system))+
   geom_polygon(aes(x = long, y = lat, group = group), data = map)+
   coord_map(projection = "gilbert")+
+  theme_bw()
+
+abs_coef <- data.frame("wavelength" = spectre$lambda, "coef" = NA, "coef_tot" = NA)
+for(i in spectre$lambda){
+  t_spectre <- filter(spectre, lambda == i)
+  t_spectre[is.na(t_spectre)] <- 0
+  t_hplc <- hplc %>% mutate(photo_t = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
+                            photo_tot = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla + t_spectre$zea * zea)
+  coef <-  summary(lm(photo_t~tchla, data = t_hplc))$coefficient[2,1]     
+  coef_tot <-  summary(lm(photo_tot~tchla, data = t_hplc))$coefficient[2,1]     
+  abs_coef[abs_coef$wavelength == i,]$coef <- coef
+  abs_coef[abs_coef$wavelength == i,]$coef_tot <- coef_tot
+}
+
+ggplot(abs_coef)+
+  geom_path(aes(x = wavelength, y = coef))+
+  geom_path(aes(x = wavelength, y = coef_tot), colour = "Grey")+
   theme_bw()
 
 hplc_resumed <- mutate(hplc, zze = depth/ze_morel,

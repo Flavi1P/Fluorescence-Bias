@@ -5,6 +5,7 @@ library(maps)
 library(fields)
 
 hplc <- read_csv("DB_climato/Data/global_hplc")
+hplc <- read_csv("DB_climato/Data/lov_hplc.csv")
 map <- read_csv("Data/map_vec")
 
 # PAR values ####
@@ -278,6 +279,7 @@ table(is.na(hplc$mld))
 #   coord_quickmap()
 
 usuable_hplc <- filter(hplc, dataset == "lov" & rrs667 != "NA" & mld < 1000) #define the points where we can compute all we need
+#usuable_hplc <- filter(hplc, rrs667 != "NA" & mld < 1000) #to use in cas e of computing the hplc_lov dataset
 #we exclude maredat information because it's mainly surface points
 
 
@@ -290,7 +292,7 @@ usuable_hplc <- filter(hplc, dataset == "lov" & rrs667 != "NA" & mld < 1000) #de
 hplc2 <- usuable_hplc %>% mutate(lon = round(lon, 2),
                 lat = round(lat, 2)) #usuablee_hplc is deprecated from now
 
-LON_LAT_MONTH <- unique(hplc2[,c("lon","lat","month")]) %>% mutate(nprof = seq(1, nrow(.), by = 1)) #create a num of profile
+LON_LAT_MONTH <- unique(hplc2[,c("lon","lat","month", "day")]) %>% mutate(nprof = seq(1, nrow(.), by = 1)) #create a num of profile
 
 hplc2 <- left_join(hplc2, LON_LAT_MONTH) #add the num of the profile on hplc2
 hplc2 <- filter(hplc2, nprof %in% which(table(hplc2$nprof)>4)) #reject profiles with less than 4 data
@@ -321,10 +323,10 @@ for(i in 1:nrow(hplc2)){
   hplc2$bath[i] <- bath_of_sample #attribute the value in the ncdf
 }  
 
-#ggplot()+
-  # geom_point(aes(x = lon, y = lat, colour = bath), data = hplc2)+
-  # geom_polygon(aes(x = long, y = lat, group = group), data = map)+
-  # coord_quickmap()
+# ggplot()+
+#   geom_point(aes(x = lon, y = lat, colour = bath), data = hplc2)+
+#   geom_polygon(aes(x = long, y = lat, group = group), data = map)+
+#   coord_quickmap()
 
 hplc_open_ocean <- filter(hplc2, bath < - 500) # we filter on the bathymetric criteria
 
@@ -336,12 +338,12 @@ hplc_open_ocean <- filter(hplc2, bath < - 500) # we filter on the bathymetric cr
 good_profile <- c()
 for(i in unique(hplc_open_ocean$nprof)){
   t_prof <- filter(hplc_open_ocean, nprof == i)
-  if(max(t_prof$depth) > 100 & min(t_prof$depth < 10)){
-    good_profile <- c(good_profile, i)
+  if(max(t_prof$depth) > 100 & min(t_prof$depth) < 10){
+  good_profile <- c(good_profile, i)
   }
 }
 
-
+hplc_open_ocean <- filter(hplc_open_ocean, nprof %in% good_profile)
 
 
 #write_csv(hplc_open_ocean, "DB_climato/Data/database_final")
@@ -354,13 +356,6 @@ source("functions/zeu_moma.R")
 
 hplc <- hplc_open_ocean
 
-
-hplc$ze_monte_carlo <- NA
-for(i in unique(hplc$nprof)){
-  t_prof <- filter(hplc, nprof == i)
-  ze <- calcul_Ze_Monte_Carlo(t_prof$depth, t_prof$chla)
-  hplc[hplc$nprof == i,]$ze_monte_carlo <- ze$chlze
-}
 
 hplc$ze_morel <- NA
 for(i in unique(hplc$nprof)){
@@ -408,6 +403,7 @@ hplc_qc <- hplc_qc %>% mutate(photo_440 = peri * spectre440$peri + but * spectre
                               photo_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + chla * spectre470$chl_a + dv_chla * spectre470$dv_chla,
                               ratio = photo_440/photo_470)
 
+hplc_qc$date <- ymd(paste(hplc_qc$year, hplc_qc$month, hplc_qc$day, "-"))
 hplc_qc$doy <- yday(hplc_qc$date)#compute day of year
 
 hplc_qc <- select(hplc_qc, date, doy, month, everything(), - profile_id, - ze_monte_carlo, )
@@ -424,6 +420,6 @@ hplc_qc <- hplc_qc %>% mutate(accessory = peri + fuco + allo + but + hex +dv_chl
 #we write our final csv
 
 #write_csv(hplc_qc, "DB_climato/Data/database_final")
-
+#write_csv(hplc_qc, "DB_climato/Data/lov_climato")
 
 

@@ -130,7 +130,9 @@ ggplot(abs_coef)+
   geom_path(aes(x = wavelength, y = coef_tot), colour = "Grey")+
   geom_path(aes(x = wavelength, y = coef_protect), colour = "Brown")+
   geom_path(aes(x = wavelength, y = coef_tchla), colour = "#addd8e")+
+  geom_path(aes(x = wavelength, y = coef_tot - coef_protect), colour = "#43a2ca")+
   ylab("da/dlbd")+
+  scale_x_continuous(breaks = c(400, 440, 470, 500, 532, 600 ,700))+
   theme_bw()
 
 hplc_resumed <- mutate(hplc, zze = depth/ze_morel,
@@ -149,53 +151,4 @@ ggplot(system_info)+
   theme_classic()+
   scale_fill_manual(values = wes_palette("Darjeeling2"))
 
-for(i in unique(hplc$nprof)){
-g <- hplc %>% filter(nprof == 299) %>% 
-    ggplot()+
-    geom_point(aes(x = tchla, y = -depth))
-print(g)
-}
 
-ggplot(hplc)+
-  geom_point(aes(x = tchla, y = ratio))+
-  geom_path(aes(x = tchla, y = 3), colour = "red")+
-  scale_color_brewer(palette = "Dark2")+
-  theme_bw()+
-  facet_wrap(.~system)
-
-ggplot(hplc)+
-  geom_point(aes(x = tchla, y = photo_440, colour = "aps 440"))+
-  geom_point(aes(x = tchla, y = photo_470, colour = "aps 470"))+
-  scale_color_brewer(palette = "Dark2")+
-  theme_bw()+
-  facet_wrap(.~system)
-
-model <- lm(ratio~chla + peri + fuco + dv_chla + allo + hex + but, data = hplc)
-summary(model)
-
-pca_model <- PCA(select(hplc, chla, peri, fuco , allo , but , hex, dv_chla, ratio), scale.unit = TRUE)
-
-#transform data to avoid the effect of "when there is a lot of pigment there is a lot of all"
-
-hplc_pca <- hplc %>% select(chla, peri, fuco, allo, but, hex, dv_chla, ratio) %>% 
-  mutate(pigsum = rowSums(.),
-        chla = chla/pigsum,
-        peri = peri/pigsum,
-        fuco = fuco/pigsum,
-        allo = allo/pigsum,
-        but = but/pigsum,
-        hex = hex/pigsum,
-        dv_chla = dv_chla/pigsum) %>% 
-  filter(pigsum > 0) %>% 
-  select(-pigsum)
-
-pca_model <- PCA(hplc_pca, scale.unit = TRUE)
-
-hplc <- filter(hplc, chla != 0)
-cca_model <- CA(select(hplc, chla, peri, fuco , allo , but , hex, dv_chla, ratio), col.sup = 8)
-
-arrows <- as.data.frame(cca_model$col$coord)
-
-ggplot(arrows)+
-  geom_segment(aes(x = 0, xend = arrows$`Dim 1`, y =0, yend = arrows$`Dim 2`))+
-  geom_text(aes(x = arrows$`Dim 1`, y = arrows$`Dim 2`, label = rownames(arrows))) 

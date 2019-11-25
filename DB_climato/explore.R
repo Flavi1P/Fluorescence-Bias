@@ -5,6 +5,7 @@ library(janitor)
 library(readxl)
 library(wesanderson)
 
+
 hplc <- read_csv("DB_climato/Data/lov_climato")
 map <- read_csv("Data/map_vec")
 spectre <- read_excel("Biosope/Data/Spectres_annick.xlsx")
@@ -104,11 +105,14 @@ ggplot(hplc)+
 hplc[is.na(hplc)] <- 0
 abs_coef <- data.frame("wavelength" = spectre$lambda, "coef" = NA, "coef_tot" = NA, "coef_protect" = NA, "coef_tchla" = NA)
 
+system <- readline(prompt = "Mixed or Stratified ?")
 
+if(system == "Mixed"){
 for(i in spectre$lambda){
   t_spectre <- filter(spectre, lambda == i)
   t_spectre[is.na(t_spectre)] <- 0
-  t_hplc <- hplc %>% mutate(photo_t = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
+  t_hplc <- hplc %>% filter(system == "Mixed") %>%
+    mutate(photo_t = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
                             photo_tot = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla + t_spectre$zea * zea + t_spectre$chl_b * chlb + t_spectre$dv_chlb * dv_chlb + t_spectre$chlc12 * chlc1c2 + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
                             protect =  t_spectre$zea * zea + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
                             photo_chla = chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla
@@ -121,6 +125,25 @@ for(i in spectre$lambda){
   abs_coef[abs_coef$wavelength == i,]$coef_tot <- coef_tot
   abs_coef[abs_coef$wavelength == i,]$coef_protect <- coef_protect
   abs_coef[abs_coef$wavelength == i,]$coef_tchla<- coef_chla
+}} else{
+  for(i in spectre$lambda){
+    t_spectre <- filter(spectre, lambda == i)
+    t_spectre[is.na(t_spectre)] <- 0
+    t_hplc <- hplc %>% filter(system == "Stratified") %>%
+      mutate(photo_t = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
+                              photo_tot = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla + t_spectre$zea * zea + t_spectre$chl_b * chlb + t_spectre$dv_chlb * dv_chlb + t_spectre$chlc12 * chlc1c2 + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
+                              protect =  t_spectre$zea * zea + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
+                              photo_chla = chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla
+    )
+    coef <-  summary(lm(photo_t~tchla, data = t_hplc))$coefficient[2,1]     
+    coef_tot <-  summary(lm(photo_tot~tchla, data = t_hplc))$coefficient[2,1]
+    coef_protect <-  summary(lm(protect~tchla, data = t_hplc))$coefficient[2,1]
+    coef_chla <-  summary(lm(photo_chla~tchla, data = t_hplc))$coefficient[2,1]
+    abs_coef[abs_coef$wavelength == i,]$coef <- coef
+    abs_coef[abs_coef$wavelength == i,]$coef_tot <- coef_tot
+    abs_coef[abs_coef$wavelength == i,]$coef_protect <- coef_protect
+    abs_coef[abs_coef$wavelength == i,]$coef_tchla<- coef_chla
+  }
 }
 
 

@@ -12,7 +12,7 @@ colnames(lov_hplc)
 #We select columns that we need
 
 lov_hplc_short <- lov_hplc %>%
-  select(project, cruise, "day" = date, "month" = x9, "year" = x10, sdy, lat, lon, depth, peri, but, fuco, hex, allo, dv_chla, chla, zea)
+  select(project, cruise, "day" = date, "month" = x9, "year" = x10, sdy, lat, lon, depth, peri, but, fuco, hex, allo, dv_chla, chla, zea, chlb, dv_chlb, chlc1c2, a_caro, diad, b_caro)
 
 lov_hplc_short$profile_id <- paste(lov_hplc_short$day, lov_hplc_short$year, lov_hplc_short$month, round(lov_hplc_short$lon, 2), sep  = "/") 
 

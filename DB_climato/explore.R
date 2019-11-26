@@ -106,61 +106,10 @@ ggplot(hplc)+
 hplc[is.na(hplc)] <- 0
 abs_coef <- data.frame("wavelength" = spectre$lambda, "coef" = NA, "coef_tot" = NA, "coef_protect" = NA, "coef_tchla" = NA)
 
-choice <- readline(prompt = "Mixed or Stratified ?")
-
-if(choice == "Mixed" | choice == "Stratified"){
-for(i in spectre$lambda){
-  t_spectre <- filter(spectre, lambda == i)
-  t_spectre[is.na(t_spectre)] <- 0
-  t_hplc <- hplc %>% filter(system == choice) %>%
-    mutate(photo_t = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
-                            photo_tot = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla + t_spectre$zea * zea + t_spectre$chl_b * chlb + t_spectre$dv_chlb * dv_chlb + t_spectre$chlc12 * chlc1c2 + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
-                            protect =  t_spectre$zea * zea + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
-                            photo_chla = chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla
-  )
-  coef <-  summary(lm(photo_t~tchla, data = t_hplc))$coefficient[2,1]     
-  coef_tot <-  summary(lm(photo_tot~tchla, data = t_hplc))$coefficient[2,1]
-  coef_protect <-  summary(lm(protect~tchla, data = t_hplc))$coefficient[2,1]
-  coef_chla <-  summary(lm(photo_chla~tchla, data = t_hplc))$coefficient[2,1]
-  abs_coef[abs_coef$wavelength == i,]$coef <- coef
-  abs_coef[abs_coef$wavelength == i,]$coef_tot <- coef_tot
-  abs_coef[abs_coef$wavelength == i,]$coef_protect <- coef_protect
-  abs_coef[abs_coef$wavelength == i,]$coef_tchla<- coef_chla
-}} else{
-  for(i in spectre$lambda){
-    t_spectre <- filter(spectre, lambda == i)
-    t_spectre[is.na(t_spectre)] <- 0
-    t_hplc <- hplc %>%
-      mutate(photo_t = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
-                              photo_tot = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla + t_spectre$zea * zea + t_spectre$chl_b * chlb + t_spectre$dv_chlb * dv_chlb + t_spectre$chlc12 * chlc1c2 + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
-                              protect =  t_spectre$zea * zea + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
-                              photo_chla = chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla
-    )
-    coef <-  summary(lm(photo_t~tchla, data = t_hplc))$coefficient[2,1]     
-    coef_tot <-  summary(lm(photo_tot~tchla, data = t_hplc))$coefficient[2,1]
-    coef_protect <-  summary(lm(protect~tchla, data = t_hplc))$coefficient[2,1]
-    coef_chla <-  summary(lm(photo_chla~tchla, data = t_hplc))$coefficient[2,1]
-    abs_coef[abs_coef$wavelength == i,]$coef <- coef
-    abs_coef[abs_coef$wavelength == i,]$coef_tot <- coef_tot
-    abs_coef[abs_coef$wavelength == i,]$coef_protect <- coef_protect
-    abs_coef[abs_coef$wavelength == i,]$coef_tchla<- coef_chla
-  }
-}
-
-ggplot(abs_coef)+
-  geom_path(aes(x = wavelength, y = coef))+
-  geom_path(aes(x = wavelength, y = coef_tot), colour = "Grey")+
-  geom_path(aes(x = wavelength, y = coef_protect), colour = "Brown")+
-  geom_path(aes(x = wavelength, y = coef_tchla), colour = "#addd8e")+
-  geom_path(aes(x = wavelength, y = coef_tot - coef_protect), colour = "#43a2ca")+
-  ylab("da/dlbd")+
-  geom_label(aes(x = 600, y = 0.04, label = choice))+
-  scale_x_continuous(breaks = c(400, 440, 470, 500, 532, 600 ,700))+
-  theme_bw()
-
+choice <- readline(prompt = "Mixed or Stratified ?") #make the possibility to compute plots for different system, ask user
 
 abs_coef <- data.frame("wavelength" = spectre$lambda, "coef" = NA, "coef_tot" = NA, "coef_protect" = NA, "coef_tchla" = NA, "a_peri" = NA, "a_but" = NA, "a_hex" = NA, "a_fuco" = NA, "a_allo" = NA, "a_chla"= NA, "a_dvchla" = NA, "a_zea" = NA,
-                       "a_chlb" = NA, "a_dvchlb" = NA, "a_chlc1c2" = NA, "a_acar" = NA, "a_diad" = NA, "a_bcar" = NA)
+                       "a_chlb" = NA, "a_dvchlb" = NA, "a_chlc1c2" = NA, "a_acar" = NA, "a_diad" = NA, "a_bcar" = NA) #create empty df
 
 if(choice == "Mixed" | choice == "Stratified"){
   for(i in spectre$lambda){
@@ -289,13 +238,30 @@ if(choice == "Mixed" | choice == "Stratified"){
     }
   }
 
-
+ggplot(abs_coef)+
+  geom_path(aes(x = wavelength, y = coef))+
+  geom_path(aes(x = wavelength, y = coef_tot), colour = "Grey")+
+  geom_path(aes(x = wavelength, y = coef_protect), colour = "Brown")+
+  geom_path(aes(x = wavelength, y = coef_tchla), colour = "#addd8e")+
+  geom_path(aes(x = wavelength, y = coef_tot - coef_protect), colour = "#43a2ca")+
+  ylab("da/dlbd")+
+  geom_label(aes(x = 600, y = 0.04, label = choice))+
+  scale_x_continuous(breaks = c(400, 440, 470, 500, 532, 600 ,700))+
+  theme_bw()
 
 abs_coef$a_sum <- rowSums(abs_coef[,6:19])
 
 abs_long <- pivot_longer(abs_coef, 6:19,  names_to = "absorbtion", names_prefix = "a_")
+
+abs_long$value[abs_long$value < 0] <- 0
 ggplot(abs_long)+
   geom_col(aes(x = wavelength, y = value, fill = absorbtion), position = "stack")+
+  scale_x_continuous(breaks = c(400, 440, 470, 500, 532, 600, 700))+
+  scale_fill_manual(values = pnw_palette("Bay", n = 14))+
+  theme_bw()
+
+ggplot(abs_long)+
+  geom_area(aes(x = wavelength, y = value, fill = absorbtion))+
   scale_x_continuous(breaks = c(400, 440, 470, 500, 532, 600, 700))+
   scale_fill_manual(values = pnw_palette("Bay", n = 14))+
   theme_bw()

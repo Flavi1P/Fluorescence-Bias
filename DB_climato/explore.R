@@ -104,9 +104,8 @@ ggplot(hplc)+
 
 
 hplc[is.na(hplc)] <- 0
-abs_coef <- data.frame("wavelength" = spectre$lambda, "coef" = NA, "coef_tot" = NA, "coef_protect" = NA, "coef_tchla" = NA)
 
-choice <- readline(prompt = "Mixed or Stratified ?") #make the possibility to compute plots for different system, ask user
+choice <- readline(prompt = "Mixed or Stratified ?") # possibility to compute plots for different system, ask user
 
 abs_coef <- data.frame("wavelength" = spectre$lambda, "coef" = NA, "coef_tot" = NA, "coef_protect" = NA, "coef_tchla" = NA, "a_peri" = NA, "a_but" = NA, "a_hex" = NA, "a_fuco" = NA, "a_allo" = NA, "a_chla"= NA, "a_dvchla" = NA, "a_zea" = NA,
                        "a_chlb" = NA, "a_dvchlb" = NA, "a_chlc1c2" = NA, "a_acar" = NA, "a_diad" = NA, "a_bcar" = NA) #create empty df
@@ -262,6 +261,7 @@ ggplot(abs_long)+
 
 ggplot(abs_long)+
   geom_area(aes(x = wavelength, y = value, fill = absorbtion))+
+  geom_label(aes(x = 600, y = 0.012, label = choice))+
   scale_x_continuous(breaks = c(400, 440, 470, 500, 532, 600, 700))+
   scale_fill_manual(values = pnw_palette("Bay", n = 14))+
   theme_bw()

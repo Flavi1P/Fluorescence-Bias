@@ -4,6 +4,7 @@ library(patchwork)
 library(janitor)
 library(readxl)
 library(wesanderson)
+library(PNWColors)
 
 
 hplc <- read_csv("DB_climato/Data/lov_climato")
@@ -105,13 +106,13 @@ ggplot(hplc)+
 hplc[is.na(hplc)] <- 0
 abs_coef <- data.frame("wavelength" = spectre$lambda, "coef" = NA, "coef_tot" = NA, "coef_protect" = NA, "coef_tchla" = NA)
 
-system <- readline(prompt = "Mixed or Stratified ?")
+choice <- readline(prompt = "Mixed or Stratified ?")
 
-if(system == "Mixed"){
+if(choice == "Mixed" | choice == "Stratified"){
 for(i in spectre$lambda){
   t_spectre <- filter(spectre, lambda == i)
   t_spectre[is.na(t_spectre)] <- 0
-  t_hplc <- hplc %>% filter(system == "Mixed") %>%
+  t_hplc <- hplc %>% filter(system == choice) %>%
     mutate(photo_t = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
                             photo_tot = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla + t_spectre$zea * zea + t_spectre$chl_b * chlb + t_spectre$dv_chlb * dv_chlb + t_spectre$chlc12 * chlc1c2 + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
                             protect =  t_spectre$zea * zea + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
@@ -129,7 +130,7 @@ for(i in spectre$lambda){
   for(i in spectre$lambda){
     t_spectre <- filter(spectre, lambda == i)
     t_spectre[is.na(t_spectre)] <- 0
-    t_hplc <- hplc %>% filter(system == "Stratified") %>%
+    t_hplc <- hplc %>%
       mutate(photo_t = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
                               photo_tot = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla + t_spectre$zea * zea + t_spectre$chl_b * chlb + t_spectre$dv_chlb * dv_chlb + t_spectre$chlc12 * chlc1c2 + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
                               protect =  t_spectre$zea * zea + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
@@ -146,8 +147,6 @@ for(i in spectre$lambda){
   }
 }
 
-
-
 ggplot(abs_coef)+
   geom_path(aes(x = wavelength, y = coef))+
   geom_path(aes(x = wavelength, y = coef_tot), colour = "Grey")+
@@ -155,7 +154,150 @@ ggplot(abs_coef)+
   geom_path(aes(x = wavelength, y = coef_tchla), colour = "#addd8e")+
   geom_path(aes(x = wavelength, y = coef_tot - coef_protect), colour = "#43a2ca")+
   ylab("da/dlbd")+
+  geom_label(aes(x = 600, y = 0.04, label = choice))+
   scale_x_continuous(breaks = c(400, 440, 470, 500, 532, 600 ,700))+
+  theme_bw()
+
+
+abs_coef <- data.frame("wavelength" = spectre$lambda, "coef" = NA, "coef_tot" = NA, "coef_protect" = NA, "coef_tchla" = NA, "a_peri" = NA, "a_but" = NA, "a_hex" = NA, "a_fuco" = NA, "a_allo" = NA, "a_chla"= NA, "a_dvchla" = NA, "a_zea" = NA,
+                       "a_chlb" = NA, "a_dvchlb" = NA, "a_chlc1c2" = NA, "a_acar" = NA, "a_diad" = NA, "a_bcar" = NA)
+
+if(choice == "Mixed" | choice == "Stratified"){
+  for(i in spectre$lambda){
+    t_spectre <- filter(spectre, lambda == i)
+    t_spectre[is.na(t_spectre)] <- 0
+    t_hplc <- hplc %>% filter(system == choice) %>%
+      mutate(photo_t = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
+             photo_tot = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla + t_spectre$zea * zea + t_spectre$chl_b * chlb + t_spectre$dv_chlb * dv_chlb + t_spectre$chlc12 * chlc1c2 + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
+             protect =  t_spectre$zea * zea + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
+             photo_chla = chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
+             #compute the absorbtion of each pigment
+             a_peri = peri * t_spectre$peri,
+             a_but = but * t_spectre$x19_bf,
+             a_hex = hex * t_spectre$x19_hf,
+             a_fuco = fuco * t_spectre$fuco,
+             a_allo = allo * t_spectre$allox,
+             a_chla = chla * t_spectre$chl_a,
+             a_dvchla = dv_chla * t_spectre$dv_chla, 
+             a_zea = zea * t_spectre$zea,
+             a_chlb = chlb * t_spectre$chl_b,
+             a_dvchlb = dv_chlb * t_spectre$dv_chlb,
+             a_chlc1c2 = chlc1c2 * t_spectre$chlc12,
+             a_acar = a_caro * t_spectre$a_car,
+             a_diad = diad * t_spectre$diad,
+             a_bcar = b_caro * t_spectre$ss_car
+      )
+    a_peri = mean(t_hplc$a_peri)
+    a_but = mean(t_hplc$a_but)
+    a_hex = mean(t_hplc$a_hex)
+    a_fuco = mean(t_hplc$a_fuco)
+    a_allo = mean(t_hplc$a_allo)
+    a_chla = mean(t_hplc$a_chla)
+    a_dvchla = mean(t_hplc$a_dvchla)
+    a_zea = mean(t_hplc$a_zea)
+    a_chlb = mean(t_hplc$a_chlb)
+    a_dvchlb = mean(t_hplc$a_dvchlb)
+    a_chlc1c2 = mean(t_hplc$a_chlc1c2)
+    a_acar = mean(t_hplc$a_acar)
+    a_diad = mean(t_hplc$a_diad)
+    a_bcar = mean(t_hplc$a_bcar)
+    coef <-  summary(lm(photo_t~tchla, data = t_hplc))$coefficient[2,1]     
+    coef_tot <-  summary(lm(photo_tot~tchla, data = t_hplc))$coefficient[2,1]
+    coef_protect <-  summary(lm(protect~tchla, data = t_hplc))$coefficient[2,1]
+    coef_chla <-  summary(lm(photo_chla~tchla, data = t_hplc))$coefficient[2,1]
+    multivariate <- summary(lm(tchla~a_peri + a_but + a_hex + a_fuco + a_allo + a_chla + a_dvchla + a_zea + a_chlb + a_dvchlb + a_chlc1c2 + a_acar + a_diad + a_bcar, data = t_hplc))
+    abs_coef[abs_coef$wavelength == i,]$coef <- coef
+    abs_coef[abs_coef$wavelength == i,]$coef_tot <- coef_tot
+    abs_coef[abs_coef$wavelength == i,]$coef_protect <- coef_protect
+    abs_coef[abs_coef$wavelength == i,]$coef_tchla<- coef_chla
+    abs_coef[abs_coef$wavelength == i,]$a_peri <- a_peri
+    abs_coef[abs_coef$wavelength == i,]$a_but <- a_but
+    abs_coef[abs_coef$wavelength == i,]$a_hex <- a_hex
+    abs_coef[abs_coef$wavelength == i,]$a_fuco <- a_fuco
+    abs_coef[abs_coef$wavelength == i,]$a_allo <- a_allo
+    abs_coef[abs_coef$wavelength == i,]$a_chla <- a_chla
+    abs_coef[abs_coef$wavelength == i,]$a_dvchla <- a_dvchla
+    abs_coef[abs_coef$wavelength == i,]$a_zea <- a_zea
+    abs_coef[abs_coef$wavelength == i,]$a_chlb <- a_chlb
+    abs_coef[abs_coef$wavelength == i,]$a_dvchlb <- a_dvchlb
+    abs_coef[abs_coef$wavelength == i,]$a_chlc1c2 <- a_chlc1c2
+    abs_coef[abs_coef$wavelength == i,]$a_acar <- a_acar
+    abs_coef[abs_coef$wavelength == i,]$a_diad <- a_diad
+    abs_coef[abs_coef$wavelength == i,]$a_bcar <- a_bcar
+  }} else{
+    for(i in spectre$lambda){
+      t_spectre <- filter(spectre, lambda == i)
+      t_spectre[is.na(t_spectre)] <- 0
+      t_hplc <- hplc %>%
+        mutate(photo_t = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
+               photo_tot = peri * t_spectre$peri + but * t_spectre$x19_bf + hex * t_spectre$x19_hf + fuco * t_spectre$fuco + allo * t_spectre$allox + chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla + t_spectre$zea * zea + t_spectre$chl_b * chlb + t_spectre$dv_chlb * dv_chlb + t_spectre$chlc12 * chlc1c2 + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
+               protect =  t_spectre$zea * zea + t_spectre$a_car * a_caro + t_spectre$diad * diad + t_spectre$ss_car * b_caro,
+               photo_chla = chla * t_spectre$chl_a + dv_chla * t_spectre$dv_chla,
+               #compute the absorbtion of each pigment
+               a_peri = peri * t_spectre$peri,
+               a_but = but * t_spectre$x19_bf,
+               a_hex = hex * t_spectre$x19_hf,
+               a_fuco = fuco * t_spectre$fuco,
+               a_allo = allo * t_spectre$allox,
+               a_chla = chla * t_spectre$chl_a,
+               a_dvchla = dv_chla * t_spectre$dv_chla, 
+               a_zea = zea * t_spectre$zea,
+               a_chlb = chlb * t_spectre$chl_b,
+               a_dvchlb = dv_chlb * t_spectre$dv_chlb,
+               a_chlc1c2 = chlc1c2 * t_spectre$chlc12,
+               a_acar = a_caro * t_spectre$a_car,
+               a_diad = diad * t_spectre$diad,
+               a_bcar = b_caro * t_spectre$ss_car
+        )
+      a_peri = mean(t_hplc$a_peri)
+      a_but = mean(t_hplc$a_but)
+      a_hex = mean(t_hplc$a_hex)
+      a_fuco = mean(t_hplc$a_fuco)
+      a_allo = mean(t_hplc$a_allo)
+      a_chla = mean(t_hplc$a_chla)
+      a_dvchla = mean(t_hplc$a_dvchla)
+      a_zea = mean(t_hplc$a_zea)
+      a_chlb = mean(t_hplc$a_chlb)
+      a_dvchlb = mean(t_hplc$a_dvchlb)
+      a_chlc1c2 = mean(t_hplc$a_chlc1c2)
+      a_acar = mean(t_hplc$a_acar)
+      a_diad = mean(t_hplc$a_diad)
+      a_bcar = mean(t_hplc$a_bcar)
+      coef <-  summary(lm(photo_t~tchla, data = t_hplc))$coefficient[2,1]     
+      coef_tot <-  summary(lm(photo_tot~tchla, data = t_hplc))$coefficient[2,1]
+      coef_protect <-  summary(lm(protect~tchla, data = t_hplc))$coefficient[2,1]
+      coef_chla <-  summary(lm(photo_chla~tchla, data = t_hplc))$coefficient[2,1]
+      multivariate <- summary(lm(tchla~a_peri + a_but + a_hex + a_fuco + a_allo + a_chla + a_dvchla + a_zea + a_chlb + a_dvchlb + a_chlc1c2 + a_acar + a_diad + a_bcar, data = t_hplc))
+      abs_coef[abs_coef$wavelength == i,]$coef <- coef
+      abs_coef[abs_coef$wavelength == i,]$coef_tot <- coef_tot
+      abs_coef[abs_coef$wavelength == i,]$coef_protect <- coef_protect
+      abs_coef[abs_coef$wavelength == i,]$coef_tchla<- coef_chla
+      abs_coef[abs_coef$wavelength == i,]$a_peri <- a_peri
+      abs_coef[abs_coef$wavelength == i,]$a_but <- a_but
+      abs_coef[abs_coef$wavelength == i,]$a_hex <- a_hex
+      abs_coef[abs_coef$wavelength == i,]$a_fuco <- a_fuco
+      abs_coef[abs_coef$wavelength == i,]$a_allo <- a_allo
+      abs_coef[abs_coef$wavelength == i,]$a_chla <- a_chla
+      abs_coef[abs_coef$wavelength == i,]$a_dvchla <- a_dvchla
+      abs_coef[abs_coef$wavelength == i,]$a_zea <- a_zea
+      abs_coef[abs_coef$wavelength == i,]$a_chlb <- a_chlb
+      abs_coef[abs_coef$wavelength == i,]$a_dvchlb <- a_dvchlb
+      abs_coef[abs_coef$wavelength == i,]$a_chlc1c2 <- a_chlc1c2
+      abs_coef[abs_coef$wavelength == i,]$a_acar <- a_acar
+      abs_coef[abs_coef$wavelength == i,]$a_diad <- a_diad
+      abs_coef[abs_coef$wavelength == i,]$a_bcar <- a_bcar
+    }
+  }
+
+
+
+abs_coef$a_sum <- rowSums(abs_coef[,6:19])
+
+abs_long <- pivot_longer(abs_coef, 6:19,  names_to = "absorbtion", names_prefix = "a_")
+ggplot(abs_long)+
+  geom_col(aes(x = wavelength, y = value, fill = absorbtion), position = "stack")+
+  scale_x_continuous(breaks = c(400, 440, 470, 500, 532, 600, 700))+
+  scale_fill_manual(values = pnw_palette("Bay", n = 14))+
   theme_bw()
 
 hplc_resumed <- mutate(hplc, zze = depth/ze_morel,

@@ -5,6 +5,8 @@ library(janitor)
 library(readxl)
 library(wesanderson)
 library(PNWColors)
+library(sf)
+source("functions/Zone_raph.R")
 
 
 hplc <- read_csv("DB_climato/Data/lov_climato")
@@ -37,6 +39,24 @@ hplc <- hplc %>% mutate(photo_430 = peri * spectre430$peri + but * spectre430$x1
 hplc <- mutate(hplc, tchla = chla + dv_chla)
 
 hplc$system <- ifelse(hplc$ze_morel > hplc$mld, "Stratified", "Mixed")
+
+
+# add the bioregion
+
+path = "Data/Longhurst"
+longhurst_sf <- read_sf(dsn = path.expand(path), quiet = TRUE)
+
+names(longhurst_sf) <- c("code", "region", "geometry")
+
+pnts_sf <- do.call("st_sfc",c(lapply(1:nrow(hplc),
+                                     function(i) {st_point(as.numeric(hplc[i,c("lon", "lat") ]))}), list("crs" = 4326))) 
+pnts_trans <- st_transform(pnts_sf, 4326)
+longhurst_trans <- st_transform(longhurst_sf, 4326)  
+hplc$code <- apply(st_intersects(longhurst_trans, pnts_trans, sparse = FALSE), 2, 
+                    function(col) { 
+                      longhurst_trans[which(col), ]$code
+                    })
+
 
 coeff430 <- summary(lm(photo_430~tchla, data = hplc))$coefficient[2,1]
 coeff440 <- summary(lm(photo_440~tchla, data = hplc))$coefficient[2,1]
@@ -276,6 +296,59 @@ ggplot(abs_long)+
   theme_bw()
 
 hplc <- mutate(hplc, zze = depth/ze_morel)
+hplc$surf_chla <- NA
+for(i in unique(hplc$nprof)){
+  t <- filter(hplc, nprof == i)
+  surf_chla <- t$tchla[t$depth == min(t$depth)]
+  if(surf_chla < 0.05){
+    troph <- "<0.05"
+  }
+  else{
+    if(surf_chla < 0.1){
+      troph <- "<0.1"
+    }
+    else{
+      if(surf_chla < 0.15){
+        troph <- "<0.15"
+      }
+      else{
+        if(surf_chla < 0.2){
+          troph <- "<0.2"
+        }
+        else{
+          if(surf_chla < 0.3){
+            troph <- "<0.3"
+          }
+          else{
+            if(surf_chla < 0.5){
+              troph <- "< 0.5"
+            }
+            else{
+              if(surf_chla < 1){
+                troph <- "<1"
+              }
+              else{
+                troph <- "> 1"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  hplc$surf_chla[hplc$nprof == i] <- troph
+}
+
+for(i in unique(hplc$nprof)){
+  t <- filter(hplc, nprof == i)
+  hplc$zone[hplc$nprof == i] <- Zone(t$lat, t$lon)
+}
+
+ggplot(filter(hplc, zze <2 & code != "MEDI"))+
+  geom_point(aes(x = ratio, y = -zze, colour = code), show.legend = FALSE)+
+  facet_wrap(.~surf_chla) +
+  xlim(0,4)+
+  theme_bw()
 
 ggplot(filter(hplc, zze < 1.5))+
   geom_point(aes(x = chla, y = ratio, colour = zze))+
@@ -286,12 +359,19 @@ ggplot(filter(hplc, zze < 1.5))+
 
 hplc$layer <- floor(hplc$zze)+1
 
-
-ggplot(filter(hplc, zze <4))+
-  geom_point(aes(x = tchla, y = log(ratio), colour = lat))+
-  scale_color_viridis_c() +
-  facet_wrap(.~layer) +
+ggplot(hplc)+
+  geom_point(aes(x = lon, y = lat, colour = zone))+
+  geom_polygon(aes(x = long, y = lat, group = group), data = map)+
+  coord_map(projection = "gilbert")+
   theme_bw()
+
+ggplot(filter(hplc, zze <2))+
+  geom_point(aes(x = ratio, y = -zze, colour = code), show.legend = FALSE)+
+  facet_wrap(.~zone) +
+  xlim(0,4)+
+  theme_bw()
+
+
 
 hplc_resumed <- mutate(hplc, zze = depth/ze_morel,
                zone = ifelse(zze < 0.5, "surface", "depth")) %>% 

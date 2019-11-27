@@ -25,6 +25,11 @@ hplc <- hplc %>% mutate(photo_430 = peri * spectre430$peri + but * spectre430$x1
                         abs_430 = peri * spectre430$peri + but * spectre430$x19_bf + hex * spectre430$x19_hf + fuco * spectre430$fuco + allo * spectre430$allox + chla * spectre430$chl_a + dv_chla * spectre430$dv_chla + spectre430$zea * zea + spectre430$chl_b * chlb + spectre430$dv_chlb * dv_chlb + spectre430$chlc12 * chlc1c2 + spectre430$a_car * a_caro + spectre430$diad * diad + spectre430$ss_car * b_caro,
                         abs_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + chla * spectre470$chl_a + dv_chla * spectre470$dv_chla + spectre470$zea * zea + spectre470$chl_b * chlb + spectre470$dv_chlb * dv_chlb + spectre470$chlc12 * chlc1c2 + spectre470$a_car * a_caro + spectre470$diad * diad + spectre470$ss_car * b_caro,
                         abs_532 = peri * spectre532$peri + but * spectre532$x19_bf + hex * spectre532$x19_hf + fuco * spectre532$fuco + allo * spectre532$allox + chla * spectre532$chl_a + dv_chla * spectre532$dv_chla + spectre532$zea * zea + spectre532$chl_b * chlb + spectre532$dv_chlb * dv_chlb + spectre532$chlc12 * chlc1c2 + spectre532$a_car * a_caro + spectre532$diad * diad + spectre532$ss_car * b_caro,
+                        protect_440 =  spectre440$zea * zea + spectre440$a_car * a_caro + spectre440$diad * diad + spectre440$ss_car * b_caro,
+                        protect_470 =  spectre470$zea * zea + spectre470$a_car * a_caro + spectre470$diad * diad + spectre470$ss_car * b_caro,
+                        a_ps_440 = abs_440 - protect_440,
+                        a_ps_470 = abs_470 - protect_470,
+                        ratio = a_ps_440/a_ps_470
                         )
 
 
@@ -97,11 +102,15 @@ ggplot(hplc)+
 
 
 ggplot(hplc)+
-  geom_point(aes(x = lon, y = lat, colour = system))+
+  geom_point(aes(x = lon, y = lat, colour = project))+
   geom_polygon(aes(x = long, y = lat, group = group), data = map)+
   coord_map(projection = "gilbert")+
   theme_bw()
 
+ggplot(filter(hplc, lat < 10 & lat > -10))+
+  geom_point(aes(x = chla, y = -depth))+
+  facet_wrap(.~ nprof)+
+  theme_bw()
 
 hplc[is.na(hplc)] <- 0
 
@@ -264,6 +273,24 @@ ggplot(abs_long)+
   geom_label(aes(x = 600, y = 0.012, label = choice))+
   scale_x_continuous(breaks = c(400, 440, 470, 500, 532, 600, 700))+
   scale_fill_manual(values = pnw_palette("Bay", n = 14))+
+  theme_bw()
+
+hplc <- mutate(hplc, zze = depth/ze_morel)
+
+ggplot(filter(hplc, zze < 1.5))+
+  geom_point(aes(x = chla, y = ratio, colour = zze))+
+  scale_color_viridis_c()+
+  xlim(0,1)+
+  ylim(0,10)+
+  theme_bw()
+
+hplc$layer <- floor(hplc$zze)+1
+
+
+ggplot(filter(hplc, zze <4))+
+  geom_point(aes(x = tchla, y = log(ratio), colour = lat))+
+  scale_color_viridis_c() +
+  facet_wrap(.~layer) +
   theme_bw()
 
 hplc_resumed <- mutate(hplc, zze = depth/ze_morel,

@@ -377,16 +377,43 @@ ggplot(filter(hplc, zze <2))+
   theme_bw()
 
 
-ggplot(filter(hplc, zone == "SPSTG"))+
+ggplot(filter(hplc, project == "EPOPE"))+
+  geom_point(aes(x = ratio440_532, y = -zze, colour = "440/532", group = nprof))+
+  geom_point(aes(x = ratio470_532, y = -zze, colour = "470/532", group = nprof))+
+  geom_point(aes(x = ratio, y = -zze, colour = "440/570", group = nprof))+
+  geom_point(aes(x = tchla*4, y = -zze, colour = "Chla", group = nprof))+
+  scale_x_continuous(sec.axis = sec_axis(~. /4 , name = "Chla"))+
+  xlab("Absorbtion")+
+  scale_color_brewer(palette = "Paired")+
+  theme_bw()
+
+ggplot(filter(hplc, project == "EPOPE"))+
+  geom_path(aes(x = tchla, y = -zze, colour = surf_chla, group = nprof), size = 2)+
+  xlab("Absorbtion")+
+  scale_color_brewer(palette = "Paired")+
+  theme_bw()
+
+ggplot(filter(hplc, project == "EPOPE"))+
+  geom_point(aes(x = lon, y = lat, colour = nprof))+
+  geom_polygon(aes(x = long, y = lat, group = group), data = map)+
+  xlim(-160,-140)+
+  ylim(-19,2)+
+  coord_quickmap()+
+  scale_color_viridis_c()+
+  theme_bw()
+
+ggplot(filter(hplc, project == "EPOPE"))+
   geom_path(aes(x = ratio440_532, y = -zze, colour = "440/532", group = nprof))+
   geom_path(aes(x = ratio470_532, y = -zze, colour = "470/532", group = nprof))+
   geom_path(aes(x = ratio, y = -zze, colour = "440/570", group = nprof))+
-  geom_path(aes(x = tchla*4, y = -zze, colour = "Chla", group = nprof))+
-  xlab("")+
-  theme_bw()
-
-
-hplc_resumed <- mutate(hplc, zze = depth/ze_morel,
+  geom_path(aes(x = tchla*10, y = -zze, colour = "Chla", group = nprof))+
+  scale_x_continuous(sec.axis = sec_axis(~. /10 , name = "Chla"))+
+  xlab("Absorbtion")+
+  scale_color_brewer(palette = "Paired")+
+  theme_bw()+
+  facet_wrap(~nprof, scales = "free_x")
+  
+  hplc_resumed <- mutate(hplc, zze = depth/ze_morel,
                zone = ifelse(zze < 0.5, "surface", "depth")) %>% 
   group_by(nprof, zone, system) %>% 
   summarise_if(is.numeric, mean, na.rm = TRUE) %>% 

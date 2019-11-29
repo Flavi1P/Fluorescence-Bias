@@ -29,9 +29,13 @@ hplc <- hplc %>% mutate(photo_430 = peri * spectre430$peri + but * spectre430$x1
                         abs_532 = peri * spectre532$peri + but * spectre532$x19_bf + hex * spectre532$x19_hf + fuco * spectre532$fuco + allo * spectre532$allox + chla * spectre532$chl_a + dv_chla * spectre532$dv_chla + spectre532$zea * zea + spectre532$chl_b * chlb + spectre532$dv_chlb * dv_chlb + spectre532$chlc12 * chlc1c2 + spectre532$a_car * a_caro + spectre532$diad * diad + spectre532$ss_car * b_caro,
                         protect_440 =  spectre440$zea * zea + spectre440$a_car * a_caro + spectre440$diad * diad + spectre440$ss_car * b_caro,
                         protect_470 =  spectre470$zea * zea + spectre470$a_car * a_caro + spectre470$diad * diad + spectre470$ss_car * b_caro,
+                        protect_532 =  spectre532$zea * zea + spectre532$a_car * a_caro + spectre532$diad * diad + spectre532$ss_car * b_caro,
                         a_ps_440 = abs_440 - protect_440,
                         a_ps_470 = abs_470 - protect_470,
-                        ratio = a_ps_440/a_ps_470
+                        a_ps_532 = abs_532 - protect_532,
+                        ratio = a_ps_440/a_ps_470,
+                        ratio440_532 = a_ps_440/a_ps_532,
+                        ratio470_532 = a_ps_470/a_ps_532
                         )
 
 
@@ -366,11 +370,20 @@ ggplot(hplc)+
   theme_bw()
 
 ggplot(filter(hplc, zze <2))+
-  geom_point(aes(x = ratio, y = -zze, colour = code), show.legend = FALSE)+
-  facet_wrap(.~zone) +
-  xlim(0,4)+
+  geom_point(aes(x = ratio440_532, y = -zze, colour = "440/532"))+
+  geom_point(aes(x = ratio470_532, y = -zze, colour = "470/532"))+
+  geom_point(aes(x = ratio, y = -zze, colour = "440/570"))+
+  facet_wrap(.~zone, scales = "free_x") +
   theme_bw()
 
+
+ggplot(filter(hplc, zone == "SPSTG"))+
+  geom_path(aes(x = ratio440_532, y = -zze, colour = "440/532", group = nprof))+
+  geom_path(aes(x = ratio470_532, y = -zze, colour = "470/532", group = nprof))+
+  geom_path(aes(x = ratio, y = -zze, colour = "440/570", group = nprof))+
+  geom_path(aes(x = tchla*4, y = -zze, colour = "Chla", group = nprof))+
+  xlab("")+
+  theme_bw()
 
 
 hplc_resumed <- mutate(hplc, zze = depth/ze_morel,

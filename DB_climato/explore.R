@@ -407,11 +407,21 @@ ggplot(filter(hplc, project == "EPOPE"))+
   geom_path(aes(x = ratio470_532, y = -zze, colour = "470/532", group = nprof))+
   geom_path(aes(x = ratio, y = -zze, colour = "440/570", group = nprof))+
   geom_path(aes(x = tchla*10, y = -zze, colour = "Chla", group = nprof))+
+  geom_path(aes(x = chlb/chla, y = -zze, colour = "chlb/chla", group = nprof))+
   scale_x_continuous(sec.axis = sec_axis(~. /10 , name = "Chla"))+
   xlab("Absorbtion")+
   scale_color_brewer(palette = "Paired")+
   theme_bw()+
-  facet_wrap(~nprof, scales = "free_x")
+  facet_wrap(~surf_chla, scales = "free_x")
+
+ggplot(filter(hplc, project == "EPOPE"))+
+  geom_path(aes(x = ratio470_532, y = -zze, colour = "ratio 470/532", group = nprof))+
+  geom_path(aes(x = chlb/chla * 5, y = -zze, colour = "chlb/chla", group = nprof))+
+  scale_color_viridis_d()+
+  scale_x_continuous(sec.axis = sec_axis(~. /5 , name = "Chlb/Chla"))+
+  xlab("Absorbtion")+
+  facet_wrap(~surf_chla, scales = "free_x")+
+  theme_bw()
   
   hplc_resumed <- mutate(hplc, zze = depth/ze_morel,
                zone = ifelse(zze < 0.5, "surface", "depth")) %>% 

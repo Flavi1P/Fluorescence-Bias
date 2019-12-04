@@ -364,7 +364,7 @@ ggplot(filter(hplc, zze < 1.5))+
 hplc$layer <- floor(hplc$zze)+1
 
 ggplot(hplc)+
-  geom_point(aes(x = lon, y = lat, colour = zone))+
+  geom_point(aes(x = lon, y = lat, colour = code))+
   geom_polygon(aes(x = long, y = lat, group = group), data = map)+
   coord_map(projection = "gilbert")+
   theme_bw()
@@ -422,7 +422,14 @@ ggplot(filter(hplc, project == "EPOPE"))+
   xlab("Absorbtion")+
   facet_wrap(~surf_chla, scales = "free_x")+
   theme_bw()
-  
+
+ggplot(filter(hplc, code == "SANT"))+
+  geom_point(aes(x = lon, y = lat, colour = project))+
+  geom_polygon(aes(x = long, y = lat, group = group), data = map)+
+  coord_quickmap()+
+  theme_bw()  
+
+
   hplc_resumed <- mutate(hplc, zze = depth/ze_morel,
                zone = ifelse(zze < 0.5, "surface", "depth")) %>% 
   group_by(nprof, zone, system) %>% 

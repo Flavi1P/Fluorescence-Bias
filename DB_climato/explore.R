@@ -430,7 +430,7 @@ ggplot(filter(hplc, code == "SANT"))+
   theme_bw()  
 
 
-  hplc_resumed <- mutate(hplc, zze = depth/ze_morel,
+hplc_resumed <- mutate(hplc, zze = depth/ze_morel,
                zone = ifelse(zze < 0.5, "surface", "depth")) %>% 
   group_by(nprof, zone, system) %>% 
   summarise_if(is.numeric, mean, na.rm = TRUE) %>% 

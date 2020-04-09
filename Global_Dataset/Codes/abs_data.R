@@ -4,6 +4,7 @@ library(readxl)
 library(patchwork)
 library(vegan)
 library(ggrepel)
+library(treemap)
 
 lov <- read_excel("Dataset_LOV.xls", na = "NA") %>% clean_names()
 
@@ -147,28 +148,28 @@ ggplot(filter(lov_ratio, campagne != 'BENCAL' & z_zeu_mean < 4))+
 
 lov_afc <- lov_tot %>%
   mutate(ratio_440_470 = x440/x470, ratio_440_530 = x440/x530, real_440_470 = real440/real470) %>% 
-  select(campagne, lat, lon, profondeur, z_zeu, chla, chlb, fuco, zea, x19hf, ratio_440_470, ratio_440_530, real_440_470, x400:x600, real400:real600) %>% 
+  select(campagne, lat, lon, profondeur, z_zeu, p_pico, p_nano, p_micro, fuco, peri, x19hf, x19bf, allo, t_chlb, t_chla, zea, ratio_440_470, ratio_440_530, real_440_470, x400:x600, real400:real600, a400:a600) %>% 
   mutate(rowsum = rowSums(select(., x400:x550))) %>% 
-  filter(rowsum > 0 & ratio_440_530 >= 0 & ratio_440_530 < 10 & ratio_440_470 <= 1.4)
+  filter(rowsum > 0 & ratio_440_530 >= 0 & ratio_440_530 < 10 & ratio_440_470 <= 1.4 & real_440_470 <= 4)
 
 
-AFC <- cca(select(lov_afc, x400:x490), scale = TRUE)
+AFC <- cca(select(lov_afc, x430:x480), scale = TRUE)
 
 scores <- data.frame(scores(AFC, choices = c(1,2,3), display = "site"))
 lov_afc <- bind_cols(lov_afc, scores)
 
-fitscore <- envfit(AFC, select(lov_afc, lat:ratio_440_530), na.rm = TRUE)  
+fitscore <- envfit(AFC, select(lov_afc, lat:real_440_470), na.rm = TRUE)  
 fitarrow <- as.data.frame(fitscore$vectors$arrows)
 
 ggplot(lov_afc)+
   geom_point(aes(x = CA1, y = CA2, colour = ratio_440_470))+
-  geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = fitarrow, colour = "#33a02c")+
+  geom_segment(aes(x = 0, y = 0, xend = CA1*1.7, yend = CA2*1.7), data = fitarrow)+
   geom_text_repel(aes(x = CA1*1.7, y = CA2*1.7, label=rownames(fitarrow), fontface = 2), data = fitarrow)+
   scale_color_viridis_c()+
   xlim(-3,3)+
   ylim(-10,10)
 
-distlov <- dist(select(lov_afc, CA1, CA2))
+distlov <- dist(select(lov_afc, CA1, CA2, CA3))
 lov_afc$group <- as.factor(cutree(hclust(distlov, method = "ward.D"), k = 3))
 
 ggplot(lov_afc)+
@@ -181,8 +182,8 @@ ggplot(lov_afc)+
 
 lov_clust <- lov_afc %>%
   group_by(group) %>% 
-  summarise_at(vars(c(x400:x600, real400:real600, ratio_440_470)), c(mean, sd)) %>% 
-  pivot_longer(c(x400_fn1:x600_fn1, x400_fn2:x600_fn2, real400_fn1:real600_fn1, real400_fn2:real600_fn2), names_to = 'wavelength', values_to = 'abs') %>% 
+  summarise_at(vars(c(x400:x600, real400:real600, a400:a600, ratio_440_470)), c(mean, sd)) %>% 
+  pivot_longer(c(x400_fn1:x600_fn1, x400_fn2:x600_fn2, a400_fn1:a600_fn1, a400_fn2:a600_fn2, real400_fn1:real600_fn1, real400_fn2:real600_fn2), names_to = 'wavelength', values_to = 'abs') %>% 
   separate(wavelength, into = c('wavelength', 'operation'), '_')
 
 lov_clust$lambda <- as.numeric(str_sub(lov_clust$wavelength, -3,-1))
@@ -197,11 +198,17 @@ lov_clust <- lov_clust %>%
 fit <- aov(ratio_440_470~group , data = lov_afc)
 hsd <- TukeyHSD(fit)
 
+summary <- lov_afc %>% 
+  group_by(group) %>% 
+  summarise_at(vars(c(ratio_440_470, real_440_470)), c(mean, sd))
+
 ggplot(filter(lov_clust, type == 'x'))+
   geom_path(aes(x = lambda, y = mean, colour = 'observed'))+
   geom_path(aes(x = lambda, y = mean, colour = 'real'), data = filter(lov_clust, type == 'real'))+
-  geom_line(aes(x = lambda, y = mean + sd), linetype = 'dotted')+
-  geom_line(aes(x = lambda, y = mean - sd), linetype = 'dotted')+
+  geom_line(aes(x = lambda, y = mean + sd, colour = 'observed'), linetype = 'dotted')+
+  geom_line(aes(x = lambda, y = mean - sd, colour = 'observed'), linetype = 'dotted')+
+  geom_line(aes(x = lambda, y = mean + sd, colour = 'real'), linetype = 'dotted', data = filter(lov_clust, type == 'real'))+
+  geom_line(aes(x = lambda, y = mean - sd, colour = 'real'), linetype = 'dotted', data = filter(lov_clust, type == 'real'))+
   geom_vline(xintercept = 440, colour = 'blue')+
   geom_vline(xintercept = 470, colour = 'green')+
   facet_wrap(.~ group, scales = 'free_y')
@@ -209,13 +216,27 @@ ggplot(filter(lov_clust, type == 'x'))+
 ggplot(lov_afc)+
   geom_boxplot(aes(x = group, y = ratio_440_470))
 
-summary <- lov_afc %>% 
+tplot <- lov_afc %>% 
   group_by(group) %>% 
-  summarise_at(vars(c(ratio_440_470, real_440_470)), c(mean, sd))
+  summarise_at(vars(c(p_pico, p_nano, p_micro, t_chlb, fuco, zea, peri, allo, x19hf, x19bf)), mean, na.rm = TRUE) %>% 
+  ungroup() %>% 
+  pivot_longer(t_chlb:x19bf, names_to = 'pigment', values_to = 'concentration') %>% 
+  mutate(size = ifelse(pigment %in% c('zea', 't_chlb'), 'pico', ifelse(pigment %in% c('allo', 'x19hf', 'x19bf'), 'nano', ifelse(pigment %in% c('fuco', 'peri'), 'micro', 'error'))))
 
-ggplot(summary)+
-  geom_col(aes(x = group, y = ratio_440_470_fn1))+
-  geom_errorbar(aes(x = group, ymin = ratio_440_470_fn1 - ratio_440_470_fn2, ymax = ratio_440_470_fn1 + ratio_440_470_fn2))
+tplot1 <- filter(tplot, group == '1')
+tplot2 <- filter(tplot, group == '2')
+tplot3 <- filter(tplot, group == '3')
+
+
+treemap(tplot1, index = c('size', 'pigment'), vSize = 'concentration', type = 'index', palette = 'Set1')
+treemap(tplot2, index = c('size', 'pigment'), vSize = 'concentration', type = 'index', palette = 'Set1')
+treemap(tplot3, index = c('size', 'pigment'), vSize = 'concentration', type = 'index', palette = 'Set1')
+
+ggplot(tplot1, aes(area = concentration, fill = size, subgroup = pigment))+
+  geom_treemap(position = )+
+  geom_treemap_subgroup_text(size = 12)
+
+par(mfrow = c(1,3))
 
 ggplot(lov_afc)+
   geom_boxplot(aes(x = group, y = real_440_470))

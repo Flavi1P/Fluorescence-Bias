@@ -6,7 +6,7 @@ library(vegan)
 library(ggrepel)
 library(treemap)
 
-lov <- read_excel("Dataset_LOV.xls", na = "NA") %>% clean_names()
+#♠lov <- read_excel("Dataset_LOV.xls", na = "NA") %>% clean_names()
 types <- c('c', 'c', rep('n', 186))
 lov <- read_csv('Data/Absorbtion/lov_soclim.csv', col_types = as.list(types))
 
@@ -64,7 +64,7 @@ colnames(pur_df) = paste('pur', spectre$lambda, sep = '')
 
 
 lov_tot <- bind_cols(lov, result_df, pur_df)
-lov_long <- lov_tot %>% mutate(round_depth = round(profondeur), ratio = x440/x470) %>%
+lov_long <- lov_tot %>% mutate(round_depth = round(depth), ratio = x440/x470) %>%
   pivot_longer(c(x400:pur700), names_to = "wavelength", values_to = "abs")
 
 lov_long$wavelength <- gsub('^([a-z]+)([0-9]{3})$', '\\1_\\2', lov_long$wavelength)
@@ -75,16 +75,16 @@ lov_long <- lov_long %>% pivot_wider(names_from = type, values_from = abs)
 lov_long <- lov_long %>% mutate(factor = pur/a,
                                 real = x * factor)
 
-real_df <- select(lov_long, campagne, profondeur, lambda, real)
-pur_df <- select(lov_long, campagne, profondeur, lambda, pur)
-a_df <- select(lov_long, campagne, profondeur, lambda, a)
-x_df <- select(lov_long, campagne, profondeur, lambda, x)
+real_df <- select(lov_long, campagne, depth, lambda, real)
+pur_df <- select(lov_long, campagne, depth, lambda, pur)
+a_df <- select(lov_long, campagne, depth, lambda, a)
+x_df <- select(lov_long, campagne, depth, lambda, x)
 
 transform_wide <- function(data, value, name){
   df <- data %>% group_by(lambda) %>% 
     mutate(row = row_number()) %>% 
     pivot_wider(names_from = lambda, values_from = {{value}}) %>% 
-    select(-row, - campagne, - profondeur)
+    select(-row, - campagne, - depth)
   colnames(df) <- gsub(' ', '',paste(name, colnames(df), sep = ''))
   return(df)
 }
@@ -98,7 +98,7 @@ lov_tot <- bind_cols(lov, real_df, a_df, pur_df)
 
 lov$campagne <- sub("[1-9](.*)", "", lov$campagne)
 lov_campagne <- lov %>%
-  mutate(round_depth = round(profondeur), ratio = x440/x470) %>%
+  mutate(round_depth = round(depth), ratio = x440/x470) %>%
   group_by(campagne, round_depth) %>%
   summarise_at(vars(x400:x700, ratio, z_zeu), c(mean, sd)) %>%
   pivot_longer(c(x400_fn1:x700_fn1, x400_fn2:x700_fn2), names_to = "wavelength", values_to = "Abs")
@@ -149,7 +149,7 @@ ggplot(filter(lov_ratio, campagne != 'BENCAL' & z_zeu_mean < 4))+
 
 lov_afc <- lov_tot %>%
   mutate(ratio_440_470 = x440/x470, ratio_440_530 = x440/x530, real_440_470 = real440/real470) %>% 
-  select(campagne, lat, lon, profondeur, z_zeu, p_pico, p_nano, p_micro, fuco, peri, x19hf, x19bf, allo, t_chlb, t_chla, zea, ratio_440_470, ratio_440_530, real_440_470, x400:x600, real400:real600, a400:a600) %>% 
+  select(campagne, lat, lon, depth, z_zeu, p_pico, p_nano, p_micro, fuco, peri, x19hf, x19bf, allo, t_chlb, t_chla, zea, ratio_440_470, ratio_440_530, real_440_470, x400:x600, real400:real600, a400:a600) %>% 
   mutate(rowsum = rowSums(select(., x400:x550))) %>% 
   filter(rowsum > 0 & ratio_440_530 >= 0 & ratio_440_530 < 10 & ratio_440_470 <= 1.4 & real_440_470 <= 4)
 

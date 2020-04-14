@@ -7,7 +7,8 @@ library(ggrepel)
 library(treemap)
 
 lov <- read_excel("Dataset_LOV.xls", na = "NA") %>% clean_names()
-
+types <- c('c', 'c', rep('n', 186))
+lov <- read_csv('Data/Absorbtion/lov_soclim.csv', col_types = as.list(types))
 
 
 #lov_nested <- lov %>% nest(pigments = c(chla : tot_car), aph = c(x400 : x700)) %>% 

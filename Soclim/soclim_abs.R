@@ -62,7 +62,72 @@ soclim_full <- left_join(pigment_nona, df, by = c('station', 'z' = 'depth')) %>%
 which(is.na(soclim_full$x_470))
 
 
-lov <- read_excel("Dataset_LOV.xls", na = "NA") %>% clean_names()
+lov <-read_excel("Dataset_LOV.xls", col_types = c("text", "text", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric", 
+                                               "numeric", "numeric", "numeric"), 
+                                 na = "NA") %>% clean_names()
 
 lambda_sel <- colnames(select(lov, x400:x700))
 
@@ -77,14 +142,15 @@ for(i in unique(soclim_full$station)){
   soclim_full[soclim_full$station == i, 'ze'] <- zeu
 }
 
+size <- as.numeric(length(soclim_full$station))
 soclim_full <- mutate(soclim_full, z_zeu = depth/ze,
                       campagne = 'soclim',
-                      phaeo = NA,
+                      phaeo = as.numeric(rep(NA, size)),
                       t_chlc = chlorophyll_c3 + chlorophyll_c1_c2_mg_dvp,
                       t_chlb = chlorophyll_b + divinyl_chlorophyll_b,
-                      a_car = NA,
-                      b_car = NA,
-                      tot_car = NA,
+                      a_car = as.numeric(rep(NA, size)),
+                      b_car = as.numeric(rep(NA, size)),
+                      tot_car = as.numeric(rep(NA, size)),
                       wdp = 1.56 * fucoxanthin + 0.92 * peridinin + 4.8 * alloxanthin + 1.02 * x19_butanoyloxyfucoxanthin + 1.12 * x19_hexanoyloxyfucoxanthin + 1.51 * zeaxanthin + 0.69 * t_chlb,
                       dp = fucoxanthin + peridinin + alloxanthin + x19_butanoyloxyfucoxanthin + x19_hexanoyloxyfucoxanthin + zeaxanthin + t_chlb,
                       p_micro = (1.56 * fucoxanthin + 0.92 * peridinin)/wdp,
@@ -172,8 +238,6 @@ lov_sel <- lov %>% select(campagne,
                           micro_t_chla,
                           lambda_sel)
 
-soclim_sel <- soclim_sel %>% mutate_if(is.logical, as.numeric)
-lov_sel <- lov_sel %>% mutate_if(is.logical, as.numeric)
 
 
 combine_df <- bind_rows(lov_sel, soclim_sel)

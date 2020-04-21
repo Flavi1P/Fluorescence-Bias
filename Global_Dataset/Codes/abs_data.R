@@ -5,21 +5,24 @@ library(patchwork)
 library(vegan)
 library(ggrepel)
 library(treemap)
+library(treemapify)
 
-#♠lov <- read_excel("Dataset_LOV.xls", na = "NA") %>% clean_names()
+map_vec <- read_csv('Data/map_vec')
+
+#lov <- read_excel("Dataset_LOV.xls", na = "NA") %>% clean_names()
 types <- c('c', 'c', rep('n', 186))
-lov <- read_csv('Data/Absorbtion/lov_soclim.csv', col_types = as.list(types))
+lov <- read_csv('Data/Absorbtion/lov_soclim_peacetime.csv', col_types = as.list(types))
 
 
-#lov_nested <- lov %>% nest(pigments = c(chla : tot_car), aph = c(x400 : x700)) %>% 
-  # mutate(plot_aph = map(aph, function(.x){pivot_longer(.x, 1:151, names_to = "wavelength", values_to = "abs")})) %>% 
-  # mutate(plot_aph = map(plot_aph, ~.x %>% mutate(wavelength = as.numeric(substr(wavelength, 2, 4))))) %>% 
-  # mutate(plot_aph = map2(campagne, plot_aph, function(.x,.y){
-  #   ggplot(data = .y, aes(x = wavelength, y = abs))+
-  #            geom_path()+
-  #            theme_bw()+
-  #            ggtitle(label = .x)
-  # }))
+# lov_nested <- lov %>% nest(pigments = c(chla : tot_car), aph = c(x400 : x700)) %>% 
+#   mutate(plot_aph = map(aph, function(.x){pivot_longer(.x, 1:151, names_to = "wavelength", values_to = "abs")})) %>% 
+#   mutate(plot_aph = map(plot_aph, ~.x %>% mutate(wavelength = as.numeric(substr(wavelength, 2, 4))))) %>% 
+#   mutate(plot_aph = map2(campagne, plot_aph, function(.x,.y){
+#   ggplot(data = .y, aes(x = wavelength, y = abs))+
+#               geom_path()+
+#               theme_bw()+
+#               ggtitle(label = .x)
+#    }))
 
 
 #lov_nested$plot_aph[[25]] + lov_nested$plot_aph[[26]]
@@ -118,43 +121,19 @@ ggplot(filter(lov_campagne_plot, campagne != 'BENCAL'))+
   ylab('mean aph')+
   facet_wrap(.~campagne, scales = 'free_y')
 
-ggplot(filter(lov_campagne_plot, campagne != 'BENCAL' & z_zeu_mean < 4))+
-  geom_path(aes(x = wavelength, y = mean, colour = ratio_mean, group = depth), size = 1)+
-  theme_dark()+
-  scale_color_distiller(palette = 'RdYlBu', name = 'ratio a40/a470')+
-  ylab('mean aph')+
-  facet_wrap(.~campagne, scales = 'free_y')
-
-ggplot(filter(lov_campagne_plot, campagne != 'BENCAL' & z_zeu_mean < 4))+
-  geom_path(aes(x = wavelength, y = mean, colour = z_zeu_mean, group = depth), size = 1)+
-  theme_dark()+
-  scale_color_binned(name = 'Z/Zeu')+
-  ylab('mean aph')+
-  facet_wrap(.~campagne, scales = 'free_y')
-
 
 ggplot(lov_campagne_plot)+
   geom_boxplot(aes(y = ratio_mean, x = campagne))
 
-lov_ratio <- lov_campagne_plot %>% mutate(ratio_type = round(ratio_mean, 1)) %>% 
-  arrange(wavelength, depth, campagne)
-
-ggplot(filter(lov_ratio, campagne != 'BENCAL' & z_zeu_mean < 4))+
-  geom_path(aes(x = wavelength, y = mean, colour = depth, group = depth), size = 1)+
-  theme_dark()+
-  scale_color_distiller(palette = 'RdYlBu', name = 'profondeur')+
-  ylab('mean aph')+
-  xlim(400,550)+
-  facet_wrap(.~ratio_type, scales = 'free_y')
-
 lov_afc <- lov_tot %>%
   mutate(ratio_440_470 = x440/x470, ratio_440_530 = x440/x530, real_440_470 = real440/real470) %>% 
-  select(campagne, lat, lon, depth, z_zeu, p_pico, p_nano, p_micro, fuco, peri, x19hf, x19bf, allo, t_chlb, t_chla, zea, ratio_440_470, ratio_440_530, real_440_470, x400:x600, real400:real600, a400:a600) %>% 
-  mutate(rowsum = rowSums(select(., x400:x550))) %>% 
-  filter(rowsum > 0 & ratio_440_530 >= 0 & ratio_440_530 < 10 & ratio_440_470 <= 1.4 & real_440_470 <= 4)
+  select(campagne, station, lat, lon, depth, z_zeu, p_pico, p_nano, p_micro, fuco, peri, x19hf, x19bf, allo, t_chlb, t_chla, zea, ratio_440_470, ratio_440_530, real_440_470, x400:x600, real400:real600, a400:a600) %>% 
+  mutate(rowsum = rowSums(select(., x400:x550)),
+         rowsum2 = rowSums(select(., real400:real600))) %>% 
+  filter(rowsum > 0 & rowsum2 > 0 & ratio_440_530 >= 0 & ratio_440_530 < 10 & ratio_440_470 <= 1.4 & real_440_470 <= 4)
 
 
-AFC <- cca(select(lov_afc, x430:x480), scale = TRUE)
+AFC <- cca(select(lov_afc, real400:real600), scale = TRUE)
 
 scores <- data.frame(scores(AFC, choices = c(1,2,3), display = "site"))
 lov_afc <- bind_cols(lov_afc, scores)
@@ -170,7 +149,7 @@ ggplot(lov_afc)+
   xlim(-3,3)+
   ylim(-10,10)
 
-distlov <- dist(select(lov_afc, CA1, CA2, CA3))
+distlov <- dist(select(lov_afc, CA1, CA2))
 lov_afc$group <- as.factor(cutree(hclust(distlov, method = "ward.D"), k = 3))
 
 ggplot(lov_afc)+
@@ -203,7 +182,7 @@ summary <- lov_afc %>%
   group_by(group) %>% 
   summarise_at(vars(c(ratio_440_470, real_440_470)), c(mean, sd))
 
-ggplot(filter(lov_clust, type == 'x'))+
+g1 <- ggplot(filter(lov_clust, type == 'x'))+
   geom_path(aes(x = lambda, y = mean, colour = 'observed'))+
   geom_path(aes(x = lambda, y = mean, colour = 'real'), data = filter(lov_clust, type == 'real'))+
   geom_line(aes(x = lambda, y = mean + sd, colour = 'observed'), linetype = 'dotted')+
@@ -212,7 +191,9 @@ ggplot(filter(lov_clust, type == 'x'))+
   geom_line(aes(x = lambda, y = mean - sd, colour = 'real'), linetype = 'dotted', data = filter(lov_clust, type == 'real'))+
   geom_vline(xintercept = 440, colour = 'blue')+
   geom_vline(xintercept = 470, colour = 'green')+
-  facet_wrap(.~ group, scales = 'free_y')
+  facet_wrap(.~ group,scales = 'free_y')+
+  theme_bw()
+
 
 ggplot(lov_afc)+
   geom_boxplot(aes(x = group, y = ratio_440_470))
@@ -229,20 +210,189 @@ tplot2 <- filter(tplot, group == '2')
 tplot3 <- filter(tplot, group == '3')
 
 
-treemap(tplot1, index = c('size', 'pigment'), vSize = 'concentration', type = 'index', palette = 'Set1')
-treemap(tplot2, index = c('size', 'pigment'), vSize = 'concentration', type = 'index', palette = 'Set1')
-treemap(tplot3, index = c('size', 'pigment'), vSize = 'concentration', type = 'index', palette = 'Set1')
 
-ggplot(tplot1, aes(area = concentration, fill = size, subgroup = pigment))+
-  geom_treemap(position = )+
-  geom_treemap_subgroup_text(size = 12)
 
-par(mfrow = c(1,3))
+
+g2 <- ggplot(tplot1, aes(area = concentration, fill = size, subgroup = size, label = pigment))+
+  geom_treemap(layout = 'fixed')+
+  geom_treemap_subgroup_text(layout = 'fixed', place = 'middle', fontface = 'bold', size = 14)+
+  geom_treemap_text(layout = 'fixed', place = 'bottomright', 'size' = 11, colour = 'white', fontface = 'italic')+
+  guides(fill = FALSE)+
+  scale_fill_brewer(palette = 'Dark2')
+
+g3 <- ggplot(tplot2, aes(area = concentration, fill = size, subgroup = size, label = pigment))+
+  geom_treemap(layout = 'fixed')+
+  geom_treemap_subgroup_text(layout = 'fixed', place = 'middle', fontface = 'bold', size = 14)+
+  geom_treemap_text(layout = 'fixed', place = 'bottomright', 'size' = 11, colour = 'white', fontface = 'italic')+
+  guides(fill = FALSE)+
+  scale_fill_brewer(palette = 'Dark2')
+
+g4 <- ggplot(tplot3, aes(area = concentration, fill = size, subgroup = size, label = pigment))+
+  geom_treemap(layout = 'fixed')+
+  geom_treemap_subgroup_text(layout = 'fixed', place = 'middle', fontface = 'bold', size = 14)+
+  geom_treemap_text(layout = 'fixed', place = 'bottomright', 'size' = 11, colour = 'white', fontface = 'italic')+
+  guides(fill = FALSE)+
+  scale_fill_brewer(palette = 'Dark2')
+
+g1 /(g2 | g3 | g4)
+
+
+lov_afc %>% select(ratio_440_470, real_440_470) %>% 
+  pivot_longer(c(1,2), names_to = 'ratio', values_to = 'value') %>% 
+  ggplot()+
+  geom_violin(aes(y = value, x = ratio))
+
+comp_raw <- lov_afc %>% select(real440, x440, real470, x470) %>% 
+  pivot_longer(c(1:4), names_to = 'wl', values_to = 'abs')
+
+model <- aov(abs~wl, data = comp_raw)
+summary(model)
 
 ggplot(lov_afc)+
-  geom_boxplot(aes(x = group, y = real_440_470))
+  geom_bar(aes(x = campagne, fill = group), position = 'fill')
 
-fit <- aov(real_440_470~group , data = lov_afc)
-hsd <- TukeyHSD(fit)
+biosope <- filter(lov_afc, campagne == 'Biosope')
+
+ggplot(biosope)+
+  geom_point(aes(x = lon, y = - depth, colour = group), size = 2)
+
+biosope %>% filter(station == "UPW1") %>% 
+  ggplot()+
+  geom_path(aes(x = x440, y = - depth, colour = 'x440'))+
+  geom_path(aes(x = x470, y = - depth, colour = 'x470'))+
+  geom_path(aes(x = real470, y = - depth, colour = 'real470'))+
+  geom_path(aes(x = real440, y = - depth, colour = 'real440'))
+
+biosope %>% filter(station == "STB14") %>% 
+  ggplot()+
+  geom_path(aes(x = ratio_440_470, y = - depth, colour = 'ratio'))+
+  geom_path(aes(x = real_440_470, y = - depth, colour = 'real'))
+
+biosope %>% filter(station == "EGY3") %>% 
+  ggplot()+
+  geom_point(aes(x = real_440_470, y = - depth, colour = group), size = 2)
+
+bio_nested <- biosope %>% nest(aph = c(x400 : x600), real = c(real400:real600)) %>% 
+mutate(plot_aph = map(aph, function(.x){pivot_longer(.x, 1:101, names_to = "wavelength", values_to = "abs")})) %>% 
+mutate(plot_aph = map(plot_aph, ~.x %>% mutate(wavelength = as.numeric(substr(wavelength, 2, 4))))) %>% 
+mutate(plot_aph = map2(depth, plot_aph, function(.x,.y){
+ggplot(data = .y, aes(x = wavelength, y = abs))+
+            geom_path()+
+    geom_vline(aes(xintercept = 440), colour = 'Blue')+
+    geom_vline(aes(xintercept = 470), colour = 'Green')+
+          theme_bw()+
+           ggtitle(label = .x)
+}))
 
 
+bio_nested %>% filter(group == 2 & lon < -130) %>% 
+  .[['plot_aph']] %>% reduce(`%+%`)
+
+bio_nested %>% filter(station == 'EGY3') %>% 
+  .[['plot_aph']] %>% reduce(`%+%`)
+
+soclim <- filter(lov_afc, campagne == 'soclim')
+
+ggplot(soclim)+
+  geom_point(aes(x = lat, y = - depth, colour = group), size = 2)+
+  ylim(-210,0)
+
+occur <- soclim %>% group_by(station) %>% count(group) %>% 
+  mutate(max = max(n)) %>% filter(n == max) %>% 
+  select(station, dominent = group) %>%
+  left_join(soclim)
+
+ggplot(occur)+
+  geom_text(aes(x = lon, y = lat, label = station, colour = dominent))+
+  geom_polygon(aes(x= long, y = lat, group = group), data = map_vec)+
+  coord_quickmap(xlim = c((min(soclim$lon) - 5), max(soclim$lon) + 5), ylim = c(min(soclim$lat) - 5, max(soclim$lat) + 5))
+
+ggplot(occur)+
+  geom_path(aes(x = real_440_470, y = - depth, group = station))+
+  facet_wrap(.~dominent)
+
+treeso <- soclim %>% group_by(station) %>% 
+  summarise_at(vars(c(p_pico, p_nano, p_micro, t_chlb, fuco, zea, peri, allo, x19hf, x19bf)), mean, na.rm = TRUE) %>% 
+  ungroup() %>% 
+  pivot_longer(t_chlb:x19bf, names_to = 'pigment', values_to = 'concentration') %>% 
+  mutate(size = ifelse(pigment %in% c('zea', 't_chlb'), 'pico', ifelse(pigment %in% c('allo', 'x19hf', 'x19bf'), 'nano', ifelse(pigment %in% c('fuco', 'peri'), 'micro', 'error'))))
+
+
+ggplot(treeso, aes(area = concentration, fill = size, subgroup = size, label = pigment))+
+  geom_treemap(layout = 'fixed')+
+  geom_treemap_subgroup_text(layout = 'fixed', place = 'middle', fontface = 'bold', size = 14)+
+  geom_treemap_text(layout = 'fixed', place = 'bottomright', 'size' = 11, colour = 'white', fontface = 'italic')+
+  guides(fill = FALSE)+
+  scale_fill_brewer(palette = 'Dark2')+
+  facet_wrap(.~station)
+
+soclim_long <- lov_long %>% filter(campagne == 'soclim') %>% 
+  arrange(lambda) %>% 
+  arrange(station) %>% 
+  mutate(id = paste(station, depth, sep = '_'))
+
+ggplot(soclim_long)+
+  geom_path(aes(x = lambda, y = factor, colour = station, group = id))
+
+biosope_long <- lov_long %>% filter(campagne == 'Biosope') %>% 
+  arrange(lambda) %>% 
+  arrange(station) %>% 
+  mutate(id = paste(station, depth, sep = '_'))
+
+biosope_long$lambda <- as.numeric(biosope_long$lambda)
+ggplot(biosope_long)+
+  geom_path(aes(x = lambda, y = factor, colour = station, group = id))+
+  scale_x_continuous(breaks = c(410, 440, 470, 550))
+
+ggplot(biosope_long)+
+  geom_path(aes(x = lambda, y = factor, colour = station, group = id))+
+  scale_x_continuous(breaks = c(4300, 440, 470, 500, 550), limits = c(420, 600))
+
+model_440 <- lm(log(t_chla)~log(a440), data = filter(lov_afc, group == '1'))
+summary(model_440)                     
+model_470 <- lm(t_chla~a470, data = filter(lov_afc, group == '1'))
+summary(model_470)                     
+
+ggplot(lov_afc)+
+  geom_point(aes(x = t_chla, y = real440, colour = '440'))+
+  geom_point(aes(x = t_chla, y = real470, colour = '470'))+
+  coord_trans(x = 'log', y = 'log')+
+  facet_wrap(.~group)
+
+lov_afc <- lov_afc %>% mutate(chla_470 = real470/t_chla,
+                              chla_440 = real440/t_chla)
+
+rsq <- data.frame('chl' = seq(0.005, 5, 0.005),
+                  'real_440' = NA,
+                  'real_470' = NA,
+                  'observed_440' = NA,
+                  'observed_470' = NA,
+                  'vitro_440' = NA,
+                  'vitro_470' = NA)
+
+for(i in c(1:length(rsq$chl))){
+  threshold <- rsq$chl[i]
+  df <- filter(lov_afc, t_chla < threshold)
+  real_470 <- lm(t_chla~real470, data = df)
+  real_440 <- lm(t_chla~real440, data = df)
+  real_440 <- summary(real_440)$adj.r.squared
+  real_470 <- summary(real_470)$adj.r.squared
+  observed_470 <- summary(lm(t_chla~x470, data = df))$adj.r.squared
+  observed_440 <- summary(lm(t_chla~x440, data = df))$adj.r.squared
+  vitro_470 <- summary(lm(t_chla~a470, data = df))$adj.r.squared
+  vitro_440 <- summary(lm(t_chla~a440, data = df))$adj.r.squared
+  rsq$real_440[i] <- real_440
+  rsq$real_470[i] <- real_470
+  rsq$observed_440[i] <- observed_440
+  rsq$observed_470[i] <- observed_470
+  rsq$vitro_440[i] <- vitro_440
+  rsq$vitro_470[i] <- vitro_470
+}
+
+ggplot(rsq)+
+  geom_path(aes(x = chl, y = real_440, colour = 'Real 440'))+
+  geom_path(aes(x = chl, y = real_470, colour = 'Real 470'))+
+  geom_path(aes(x = chl, y = observed_440, colour = 'observed 440'))+
+  geom_path(aes(x = chl, y = observed_470, colour = 'observed 470'))+
+  geom_path(aes(x = chl, y = vitro_440, colour = 'vitro 440'))+
+  geom_path(aes(x = chl, y = vitro_470, colour = 'vitro 470'))

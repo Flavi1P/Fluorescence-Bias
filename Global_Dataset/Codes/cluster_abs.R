@@ -154,7 +154,7 @@ lov$campagne <- sub("[1-9](.*)", "", lov$campagne)
 #create a dataset to perform a CA (afc)
 lov_afc <- lov_tot %>%
   mutate(ratio_440_470 = x440/x470, ratio_440_530 = x440/x530, real_440_470 = real440/real470) %>% 
-  select(campagne, station, lat, lon, depth, z_zeu, p_pico, p_nano, p_micro, fuco, peri, x19hf, x19bf, allo, t_chlb, t_chla, zea, ratio_440_470, ratio_440_530, real_440_470, x400:x600, real400:real600, a400:a600, pur400:pur600) %>% 
+  select(campagne, station, lat, lon, depth, z_zeu, p_pico, p_nano, p_micro, chla:dp, ratio_440_470, ratio_440_530, real_440_470, x400:x600, real400:real600, a400:a600, pur400:pur600) %>% 
   mutate(rowsum = rowSums(select(., x400:x550)),
          rowsum2 = rowSums(select(., real400:real600))) %>% 
   filter(rowsum > 0 & rowsum2 > 0 & ratio_440_530 >= 0 & ratio_440_530 < 10 & ratio_440_470 <= 1.4 & real_440_470 <= 4)

@@ -91,3 +91,17 @@ ggplot(df_model)+
 ggplot(lov_model)+
   geom_point(aes(x = t_chla, y = real470/t_chla))+
   xlim(0,0.1)
+
+lov_model %>% select(t_chla, real440, real470) %>% 
+  pivot_longer(2:3, names_to = 'wl', values_to = 'abs') %>% 
+  ggplot()+
+  geom_point(aes(x = t_chla, y = abs, colour = wl))+
+  coord_trans(x = 'log', y = 'log')+
+  facet_wrap(.~wl)
+
+lov_model %>% select(t_chla, a440, a470) %>% 
+  pivot_longer(2:3, names_to = 'wl', values_to = 'abs') %>% 
+  ggplot()+
+  geom_point(aes(x = t_chla, y = abs, colour = wl))+
+  coord_trans(x = 'log', y = 'log')+
+  facet_wrap(.~wl)

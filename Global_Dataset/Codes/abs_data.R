@@ -42,6 +42,17 @@ for(i in c(1:length(rsq$chl))){
   rsq$vitro_470[i] <- vitro_470
 }
 
+rsq$diff <- rsq$real_440 - rsq$real_470
+rsq$diffa <- rsq$vitro_440 - rsq$vitro_470
+
+
+ggplot(rsq)+
+  geom_path(aes(x = chl, y = diff, colour = 'aps'))+
+  geom_point(aes(x = chl, y = diff))+
+  geom_path(aes(x = chl, y = diffa, colour = 'a*ph'))+
+  geom_point(aes(x = chl, y = diffa))+
+  theme_bw()
+
 ggplot(rsq)+
   geom_path(aes(x = chl, y = real_440, colour = 'Real 440'))+
   geom_path(aes(x = chl, y = real_470, colour = 'Real 470'))+
@@ -99,12 +110,12 @@ lov_model <- lov_afc %>% filter(t_chla < 3 & z_zeu <= 3)
 ggplot(lov_model)+
   geom_point(aes(x = t_chla, y = real440), colour = 'skyblue2')+
   coord_trans(x = 'log', y = 'log')+
-  ylab('aph 440')+
+  ylab('aps 440')+
   theme_bw(base_size =20)+
   ggplot(lov_model)+
   geom_point(aes(x = t_chla, y = real470), colour = 'springgreen3')+
   coord_trans(x = 'log', y = 'log')+
-  ylab('aph 470')+
+  ylab('aps 470')+
   theme_bw(base_size = 20)
 
 model_440 <- lm(log(t_chla)~log(real440), data = lov_model)
@@ -187,6 +198,26 @@ for(i in c(1:length(rsq_camp$chl))){
   rsq_camp$soclim_440[i] <- soclim_440
   rsq_camp$soclim_470[i] <- soclim_470
 }
+
+rsq_camp$diffbio <- rsq_camp$biosope_440 - rsq_camp$biosope_470
+rsq_camp$diffpeace <- rsq_camp$peacetime_440 - rsq_camp$peacetime_470
+rsq_camp$diffso <- rsq_camp$soclim_440 - rsq_camp$soclim_470
+
+
+
+ggplot(rsq)+
+  geom_path(aes(x = chl, y = diff, colour = 'aps'), size = 1.2)+
+  geom_point(aes(x = chl, y = diff))+
+  geom_path(aes(x = chl, y = diffa, colour = 'a*ph'), size = 1.2)+
+  geom_point(aes(x = chl, y = diffa))+
+  geom_path(aes(x = chl, y = diffbio, colour = 'aps biosope'), size = 1.2, data = rsq_camp)+
+  geom_point(aes(x = chl, y = diffbio), data = rsq_camp)+
+  geom_path(aes(x = chl, y = diffpeace, colour = 'aps peacetime'), size = 1.2, data = rsq_camp)+
+  geom_point(aes(x = chl, y = diffpeace), data = rsq_camp)+
+  geom_path(aes(x = chl, y = diffso, colour = 'aps soclim'), size = 1.2, data = rsq_camp)+
+  geom_point(aes(x = chl, y = diffso), data = rsq_camp)+
+  scale_color_brewer(palette = 'Set1')+
+  theme_bw(base_size = 20)
 
 rsq_camp2 <- rsq_camp %>% pivot_longer(2:7, names_to = 'wl', values_to = 'r') %>% 
   separate(wl, into = c('campagne', 'wl'), sep = '_')
@@ -327,8 +358,20 @@ model470 <- lm(real470~t_chla, data = lov_new)
 lov_new$resid440 <- model440$residuals
 lov_new$resid470 <- model470$residuals
 
-lovbio <- lov_new %>% filter(campagne == 'Biosope')
+lovbio <- lov_afc %>% filter(campagne == 'Biosope' & t_chla < 0.5) %>% 
+  select(real440, real470, t_chla, lon, lat, depth) %>% 
+  pivot_longer(c(1,2), names_to = 'wl', values_to = 'aps')
 
+
+ggplot(lovbio)+
+  geom_point(aes(x = t_chla, y = aps, colour = substr(wl, 5,7)))+
+  geom_smooth(aes(x = t_chla, y = aps), method = 'lm', colour = 'black', se = FALSE)+
+  scale_color_brewer(palette = 'Set1')+
+  guides(colour = FALSE)+
+  theme_bw(base_size = 20)+
+  coord_trans(x = 'log', y = 'log')+
+  facet_wrap(.~wl)
+  
 
 
 ggplot(lovbio)+

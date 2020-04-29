@@ -126,26 +126,26 @@ lov_tot <- bind_cols(lov, real_df, a_df, pur_df)
 lov$campagne <- sub("[1-9](.*)", "", lov$campagne)
 
 #create a dataframe to plot all abs spectra, just to check
-# lov_campagne <- lov %>%
-#   mutate(round_depth = round(depth), ratio = x440/x470) %>%
-#   group_by(campagne, station, round_depth) %>%
-#   summarise_at(vars(x400:x700, ratio, z_zeu), c(mean, sd)) %>%
-#   pivot_longer(c(x400_fn1:x700_fn1, x400_fn2:x700_fn2), names_to = "wavelength", values_to = "Abs")
-# lov_campagne$wavelength <- substr(lov_campagne$wavelength, 2,8)
-# lov_campagne <- separate(lov_campagne, wavelength, into = c('wavelength', 'operation'), '_')
-# lov_campagne$wavelength <- as.numeric(lov_campagne$wavelength)
-# 
-# lov_campagne_plot <- lov_campagne %>% pivot_wider(names_from = operation, values_from = Abs) %>%
-#   arrange(campagne, station, round_depth, wavelength)
-# names(lov_campagne_plot) <- c('campagne', 'station', 'depth', 'ratio_mean', 'z_zeu_mean', 'ratio_sd', 'z_zeu_sd', 'wavelength', 'mean', 'sd')
-# 
-# 
+#  lov_campagne <- lov %>%
+#    mutate(round_depth = round(depth), ratio = x440/x470, id = c(1:length(lov$campagne))) %>%
+#    group_by(campagne, station, round_depth, id) %>%
+#    summarise_at(vars(x400:x700, ratio, z_zeu), c(mean, sd)) %>%
+#    pivot_longer(c(x400_fn1:x700_fn1, x400_fn2:x700_fn2), names_to = "wavelength", values_to = "Abs")
+#  lov_campagne$wavelength <- substr(lov_campagne$wavelength, 2,8)
+#  lov_campagne <- separate(lov_campagne, wavelength, into = c('wavelength', 'operation'), '_')
+#  lov_campagne$wavelength <- as.numeric(lov_campagne$wavelength)
+# # 
+#  lov_campagne_plot <- lov_campagne %>% pivot_wider(names_from = operation, values_from = Abs) %>%
+#    arrange(campagne, station, round_depth, wavelength)
+#  names(lov_campagne_plot) <- c('campagne', 'station', 'depth', 'id', 'ratio_mean', 'z_zeu_mean', 'ratio_sd', 'z_zeu_sd', 'wavelength', 'mean', 'sd')
+# # 
+# # 
 # ggplot(filter(lov_campagne_plot, campagne != 'BENCAL'))+
-#   geom_path(aes(x = wavelength, y = mean, colour = - depth, group = depth), size = 1)+
-#   theme_dark()+
-#   scale_color_distiller(palette = 'YlGnBu', direction = 1, name = 'profondeur')+
+#    geom_path(aes(x = wavelength, y = mean, colour = - depth, group = id), size = 1)+
+#   theme_bw(base_size = 20)+
+#    scale_color_distiller(palette = 'YlGnBu', direction = 1, name = 'profondeur')+
 #   ylab('mean aph')+
-#   facet_wrap(.~campagne, scales = 'free_y')
+#    facet_wrap(.~campagne, scales = 'free_y')
 
 
 #ggplot(lov_campagne_plot)+
@@ -194,7 +194,7 @@ ggplot(lov_afc)+
 #resume the data by cluster with mean and sd
 lov_clust <- lov_afc %>%
   group_by(group) %>% 
-  summarise_at(vars(c(x400:x600, real400:real600, a400:a600, ratio_440_470)), c(mean, sd)) %>% 
+  summarise_at(vars(c(x400:x600, real400:real600, a400:a600, real_440_470)), c(mean, sd)) %>% 
   pivot_longer(c(x400_fn1:x600_fn1, x400_fn2:x600_fn2, a400_fn1:a600_fn1, a400_fn2:a600_fn2, real400_fn1:real600_fn1, real400_fn2:real600_fn2), names_to = 'wavelength', values_to = 'abs') %>% 
   separate(wavelength, into = c('wavelength', 'operation'), '_')
 
@@ -202,6 +202,7 @@ lov_clust$lambda <- as.numeric(str_sub(lov_clust$wavelength, -3,-1))
 lov_clust$operation <- gsub('fn1', 'mean', lov_clust$operation)
 lov_clust$operation <- gsub('fn2', 'sd', lov_clust$operation)
 lov_clust$type <- str_sub(lov_clust$wavelength, end = -4)
+
 
 
 lov_clust <- lov_clust %>% 
@@ -215,18 +216,24 @@ summary <- lov_afc %>%
   group_by(group) %>% 
   summarise_at(vars(c(ratio_440_470, real_440_470)), c(mean, sd))
 
+ggplot(lov_afc)+
+  geom_boxplot(aes(x = group, y = real_440_470, fill = group))+
+  ylab('aps440/aps470')+
+  scale_fill_brewer(palette = 'Set1')+
+  theme_bw(base_size = 20)
+
 #plot the mean spectra of each cluster
 g1 <- ggplot(filter(lov_clust, type == 'x'))+
-  geom_path(aes(x = lambda, y = mean, colour = 'observed'))+
-  geom_path(aes(x = lambda, y = mean, colour = 'real'), data = filter(lov_clust, type == 'real'))+
-  geom_line(aes(x = lambda, y = mean + sd, colour = 'observed'), linetype = 'dotted')+
-  geom_line(aes(x = lambda, y = mean - sd, colour = 'observed'), linetype = 'dotted')+
-  geom_line(aes(x = lambda, y = mean + sd, colour = 'real'), linetype = 'dotted', data = filter(lov_clust, type == 'real'))+
-  geom_line(aes(x = lambda, y = mean - sd, colour = 'real'), linetype = 'dotted', data = filter(lov_clust, type == 'real'))+
+  geom_path(aes(x = lambda, y = mean, colour = 'aph'), size = 2)+
+  geom_path(aes(x = lambda, y = mean, colour = 'aps'), data = filter(lov_clust, type == 'real'), size = 2)+
+  geom_line(aes(x = lambda, y = mean + sd, colour = 'aph'), linetype = 'dotted')+
+  geom_line(aes(x = lambda, y = mean - sd, colour = 'aph'), linetype = 'dotted')+
+  geom_line(aes(x = lambda, y = mean + sd, colour = 'aps'), linetype = 'dotted', data = filter(lov_clust, type == 'real'))+
+  geom_line(aes(x = lambda, y = mean - sd, colour = 'aps'), linetype = 'dotted', data = filter(lov_clust, type == 'real'))+
   geom_vline(xintercept = 440, colour = 'blue')+
   geom_vline(xintercept = 470, colour = 'green')+
   facet_wrap(.~ group,scales = 'free_y')+
-  theme_bw()
+  theme_bw(base_size = 20)
 
 #create a df to plot the pigment community as treeplot
 tplot <- lov_afc %>% 
@@ -265,6 +272,7 @@ g4 <- ggplot(tplot3, aes(area = concentration, fill = size, subgroup = size, lab
   guides(fill = FALSE)+
   scale_fill_brewer(palette = 'Dark2')
 
+g1
 g1 /(g2 | g3 | g4)
 
 #write_csv(lov_afc, 'Data/lov_afc.csv')
@@ -283,10 +291,14 @@ g1 /(g2 | g3 | g4)
 # ggplot(lov_afc)+
 #   geom_bar(aes(x = campagne, fill = group), position = 'fill')
 # 
-# biosope <- filter(lov_afc, campagne == 'Biosope')
+ biosope <- filter(lov_afc, campagne == 'Biosope')
 # 
-# ggplot(biosope)+
-#   geom_point(aes(x = lon, y = - depth, colour = group), size = 2)
+ ggplot(biosope)+
+   geom_point(aes(x = lon, y = - depth, colour = group), size = 2)+
+   theme_bw(base_size = 20)+
+   ggtitle('Biosope')
+
+ 
 # 
 # biosope %>% filter(station == "UPW1") %>% 
 #   ggplot()+
@@ -329,10 +341,17 @@ g1 /(g2 | g3 | g4)
 #   geom_point(aes(x = lat, y = - depth, colour = group), size = 2)+
 #   ylim(-210,0)
 # 
-# occur <- soclim %>% group_by(station) %>% count(group) %>% 
-#   mutate(max = max(n)) %>% filter(n == max) %>% 
-#   select(station, dominent = group) %>%
-#   left_join(soclim)
+ occur <- lov_afc %>% group_by(station) %>% count(group) %>% 
+   mutate(max = max(n)) %>% filter(n == max) %>% 
+   select(station, dominent = group) %>%
+   left_join(lov_afc)
+ 
+ ggplot(occur)+
+   geom_point(aes(x = lon, y = lat, colour = dominent))+
+   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
+   scale_color_brewer(palette = 'Set1')+
+   coord_quickmap()+
+   theme_bw(base_size = 20)
 # 
 # ggplot(occur)+
 #   geom_text(aes(x = lon, y = lat, label = station, colour = dominent))+

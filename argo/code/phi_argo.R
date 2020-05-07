@@ -4,6 +4,8 @@ library(vegan)
 library(nnls)
 library(sf)
 library(FactoMineR)
+library(readxl)
+library(janitor)
 source("functions/phi_lm.R")
 source("functions/outliers.R")
 source("functions/phi_boot.R")
@@ -29,10 +31,36 @@ ggplot(merged_argo)+
   geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
   coord_quickmap()+
   scale_color_viridis_c()
+#a_sol_ph calculation####
+
+spectre <- read_excel("Biosope/Data/Spectres_annick.xlsx")
+spectre <- clean_names(spectre)
+
+spectre470 <- filter(spectre, lambda == 470)
+
+merged_argo <- merged_argo %>% mutate(abs_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + chla * spectre470$chl_a + spectre470$zea * zea + spectre470$chl_b * tchlb,
+                        protect_470 =  spectre470$zea * zea,
+                        a_ps_470 = abs_470 - protect_470,
+                        fluo = chla_adjusted * 2,
+                        ratio = fluo/tchla,
+                        phi_app = ratio/a_ps_470)
+
+ggplot(problem)+
+  geom_point(aes(x = a_ps_470, y = ratio, colour = lovbio))
+
+problem <- filter(merged_argo, ratio < 4 | a_ps_470 > 0.01)
+
+ggplot(problem)+
+  geom_point(aes(x = a_ps_470, y = ratio, colour = lovbio))+
+  geom_smooth(aes(x = a_ps_470, y = ratio), method = 'lm')
+
+summary(lm(a_ps_470~ratio, data = problem))
+
+ggplot(problem)+
+  geom_point(aes(y = phi_app, x = hex))
 
 #phi####
-merged_argo$fluo <- merged_argo$chla_adjusted * 2
-merged_argo$ratio <- merged_argo$fluo/merged_argo$tchla
+
 
 influential <- outliers(select(merged_argo, fluo, tchla, ratio, micro, nano, pico))
 

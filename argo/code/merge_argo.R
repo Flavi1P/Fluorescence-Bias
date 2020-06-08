@@ -26,9 +26,13 @@ hplc <- read_csv("Data/argo/hplc_argo")
 ref <- read_csv("Data/argo/ref.csv")
 ref_bis <- read_csv("Data/argo/ref_bis")
 map_vec <- read_csv("Data/map_vec")
+
 first_profiles <- read_csv("Data/argo/first_profiles")
 first_profiles <- first_profiles[-1,]
 first_profiles$date <- date(first_profiles$date)
+
+descent_profiles <- read_csv("Data/argo/descent_profiles")
+
 ref <- bind_rows(ref, ref_bis)
 
 hplc <- left_join(hplc, ref, by = c("id" = "lovbio"))
@@ -36,8 +40,12 @@ first_profiles$number <- as.numeric(first_profiles$id)
 first_profiles <- left_join(first_profiles, ref)
 first_profiles <- left_join(first_profiles, ref_bis)
 
+descent_profiles$number <- as.numeric(descent_profiles$id)
+descent_profiles <- left_join(descent_profiles, ref)
+
 
 first_profiles$depth <- round(first_profiles$pres)
+descent_profiles$depth <- round(descent_profiles$pres)
 hplc$depth <- round(hplc$depth)
 
 
@@ -59,16 +67,19 @@ hplc$profile <- profile_numb(hplc$depth, "upward")
 
 lovbio <- unique(hplc$id)
 lovbio <- lovbio[lovbio %in% unique(first_profiles$lovbio)]
+lovbio <- lovbio[lovbio %in% unique(descent_profiles$lovbio)]
 
 hplc$lon_round <- round(hplc$lon,1)
 hplc$lat_round <- round(hplc$lat,1)
-merged_dist <- data.frame(matrix(ncol = 32, nrow = 0))
+merged_dist <- data.frame(matrix(ncol = 33, nrow = 0))
 for (i in lovbio){
-  t1 <- filter(first_profiles, lovbio == i)
+  #t1 <- filter(first_profiles, lovbio == i)
+  t1 <- filter(descent_profiles, lovbio == i)
   t2 <- filter(hplc, id == i)
   if(i == "lovbio079b"){
     t2 <- filter(t2, date != "2015-03-20")
   }
+  if(!is.na(unique(t1$lat))){
   hplc_point <- cbind(t2$lon, t2$lat)
   argo_point <- cbind(rep(unique(t1$lon), length(hplc_point[,1])), rep(unique(t1$lat), length(hplc_point[,1])))
   distance <- distHaversine(hplc_point, argo_point)
@@ -84,6 +95,7 @@ for (i in lovbio){
     ungroup()
   names(merged_dist) <- colnames(merged_t)
   merged_dist <- bind_rows(merged_dist, merged_t)
+  }
 }
 
 

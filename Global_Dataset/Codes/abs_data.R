@@ -203,9 +203,12 @@ rsq_camp$diffbio <- rsq_camp$biosope_440 - rsq_camp$biosope_470
 rsq_camp$diffpeace <- rsq_camp$peacetime_440 - rsq_camp$peacetime_470
 rsq_camp$diffso <- rsq_camp$soclim_440 - rsq_camp$soclim_470
 
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> 9c9709c2c3e6d40909703f4c598a388759e1f0c2
 ggplot(rsq)+
   geom_path(aes(x = chl, y = diff, colour = 'aps'), size = 1.2)+
   geom_point(aes(x = chl, y = diff))+

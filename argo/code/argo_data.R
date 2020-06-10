@@ -57,7 +57,7 @@ pb <- txtProgressBar(min = 1, max = length(first_profiles), style = 3)
 for(i in first_profiles){
   nc <- NA
   nc <- nc_open(i)
-  variables <- names(nc$var) %>% data.frame %>% filter(. == "CHLA")
+      variables <- names(nc$var) %>% data.frame %>% filter(. == "CHLA")
   if (nrow(variables)==1){
   juld <- ncvar_get(nc, "JULD")
   juldqc <- ncvar_get(nc, "JULD_QC")
@@ -130,7 +130,7 @@ nc_df <- nc_df %>% select(-down)
 
 #write_csv(argo_data, "Data/argo/first_profiles")
 #write_csv(refbis, "Scripts/Data/argo/ref_bis")
-
+    
 
 # which(duplicated(merged$tchla))
 # 

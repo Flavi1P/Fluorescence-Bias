@@ -41,7 +41,7 @@ float_we_need$number <- as.numeric(gsub("([0-9]+).*$", "\\1",float_we_need$numbe
 
 float_we_need$lovbio <- ifelse(as.numeric(rownames(float_we_need))<40, gsub("^.+[I][T][U]", "", float_we_need$float), gsub("^.+[I][T][U]", "", float_we_need$nimp))
 float_we_need$lovbio <- substr(float_we_need$lovbio,2,11)
-
+    
 float_ref <- select(float_we_need, number, lovbio)
 write_csv(float_ref, "Scripts/Data/argo/ref.csv")
 
@@ -50,3 +50,6 @@ unique(float_we_need$lovbio)
 #with the fiollowing code : "for i in number of my profiles 
 # do wget -N —user=anonymous --password='your@adress' ftp://ftp.ifremer.fr/ifremer/argo/dac/coriolis/$i/profiles/MR*
 #done
+
+#new download for descent profiles with this line 
+#do wget -N —user=anonymous --password='your@adress' ftp://ftp.ifremer.fr/ifremer/argo/dac/coriolis/$i/profiles/BD${i}_001D.nc

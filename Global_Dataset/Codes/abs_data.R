@@ -118,7 +118,7 @@ ggplot(lov_model)+
   ylab('aps 470')+
   theme_bw(base_size = 20)
 
-model_440 <- lm(log(t_chla)~log(real440), data = lov_model)
+model_440 <- lm(t_chla~real440, data = lov_model)
 model_470 <- lm(log(t_chla)~log(real470), data = lov_model)
 
 summary(model_440)
@@ -203,6 +203,12 @@ rsq_camp$diffbio <- rsq_camp$biosope_440 - rsq_camp$biosope_470
 rsq_camp$diffpeace <- rsq_camp$peacetime_440 - rsq_camp$peacetime_470
 rsq_camp$diffso <- rsq_camp$soclim_440 - rsq_camp$soclim_470
 
+<<<<<<< HEAD
+
+
+
+=======
+>>>>>>> 9c9709c2c3e6d40909703f4c598a388759e1f0c2
 ggplot(rsq)+
   geom_path(aes(x = chl, y = diff, colour = 'aps'), size = 1.2)+
   geom_point(aes(x = chl, y = diff))+
@@ -214,6 +220,55 @@ ggplot(rsq)+
   geom_point(aes(x = chl, y = diffpeace), data = rsq_camp)+
   geom_path(aes(x = chl, y = diffso, colour = 'aps soclim'), size = 1.2, data = rsq_camp)+
   geom_point(aes(x = chl, y = diffso), data = rsq_camp)+
+  scale_color_brewer(palette = 'Set1')+
+  theme_bw(base_size = 20)
+
+lov_afc$seuil <- ceiling(lov_afc$chla/0.2)
+rsq_threshold <- data.frame('chl' = seq(0.1, 1, 0.05),
+                       'biosope_440' = NA,
+                       'biosope_470' = NA,
+                       'peacetime_440' = NA,
+                       'peacetime_470' = NA,
+                       'soclim_440' = NA,
+                       'soclim_470' = NA)
+
+
+for(i in c(1:length(rsq_threshold$chl))){
+  threshold <- rsq_threshold$chl[i]
+  dfbio <- filter(lov_afc, chla < threshold & campagne == 'Biosope')
+  dfbio <- sample_n(dfbio, 25)
+  dfpeace <- filter(lov_afc, chla < threshold & campagne == 'peacetime')
+  dfpeace <- sample_n(dfpeace, 25)
+  dfso <- filter(lov_afc, chla < threshold & campagne == 'soclim')
+  dfso <- sample_n(dfso, 25)
+  biosope_470 <- summary(lm(t_chla~real470, data = dfbio))$adj.r.squared
+  biosope_440 <- summary(lm(t_chla~real440, data = dfbio))$adj.r.squared
+  peacetime_470 <- summary(lm(t_chla~real470, data = dfpeace))$adj.r.squared
+  peacetime_440 <- summary(lm(t_chla~real440, data = dfpeace))$adj.r.squared
+  soclim_470 <- summary(lm(t_chla~real470, data = dfso))$adj.r.squared
+  soclim_440 <- summary(lm(t_chla~real440, data = dfso))$adj.r.squared
+  
+  rsq_threshold$biosope_440[i] <- biosope_440
+  rsq_threshold$biosope_470[i] <- biosope_470
+  
+  rsq_threshold$peacetime_440[i] <- peacetime_440
+  rsq_threshold$peacetime_470[i] <- peacetime_470
+  
+  rsq_threshold$soclim_440[i] <- soclim_440
+  rsq_threshold$soclim_470[i] <- soclim_470
+}
+
+rsq_threshold$diffbio <- rsq_threshold$biosope_440 - rsq_threshold$biosope_470
+rsq_threshold$diffpeace <- rsq_threshold$peacetime_440 - rsq_threshold$peacetime_470
+rsq_threshold$diffso <- rsq_threshold$soclim_440 - rsq_threshold$soclim_470
+
+ggplot(rsq_threshold)+
+  geom_path(aes(x = chl, y = diffbio, colour = 'aps biosope'), size = 1.2)+
+  geom_point(aes(x = chl, y = diffbio))+
+  geom_path(aes(x = chl, y = diffpeace, colour = 'aps peacetime'), size = 1.2)+
+  geom_point(aes(x = chl, y = diffpeace))+
+  geom_path(aes(x = chl, y = diffso, colour = 'aps soclim'), size = 1.2)+
+  geom_point(aes(x = chl, y = diffso))+
   scale_color_brewer(palette = 'Set1')+
   theme_bw(base_size = 20)
 

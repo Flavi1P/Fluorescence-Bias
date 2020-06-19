@@ -21,7 +21,7 @@ library(plyr)
 # time_all<-as.character(paste(index_ifremer$V2))
 
 
-profiles <- list.files("argo/Data/biofiles", full.names = TRUE)
+profiles <- list.files("argo/Data/Biofiles", full.names = TRUE)
 
 ref <- read_csv("Data/argo/ref.csv")
 ref_bis <- read_csv("Data/argo/ref_bis")
@@ -107,6 +107,7 @@ table(is.na(argo_data$pres)) #62 NA for pres
 
 argo_data_nona <- na.omit(argo_data) # we lose 465 data point
 
+#write_csv(argo_data_nona, 'Data/argo/Biodata')
 #profiles check
 
 ggplot(argo_data_nona)+

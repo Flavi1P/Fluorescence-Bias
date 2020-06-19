@@ -27,7 +27,9 @@ ref <- read_csv("Data/argo/ref.csv")
 ref_bis <- read_csv("Data/argo/ref_bis")
 map_vec <- read_csv("Data/map_vec")
 
-first_profiles <- read_csv("Data/argo/first_profiles")
+#first_profiles <- read_csv("Data/argo/first_profiles")
+first_profiles <- read_csv("Data/argo/clean_argo")
+
 first_profiles <- first_profiles[-1,]
 first_profiles$date <- date(first_profiles$date)
 
@@ -73,8 +75,8 @@ hplc$lon_round <- round(hplc$lon,1)
 hplc$lat_round <- round(hplc$lat,1)
 merged_dist <- data.frame(matrix(ncol = 33, nrow = 0))
 for (i in lovbio){
-  #t1 <- filter(first_profiles, lovbio == i)
-  t1 <- filter(descent_profiles, lovbio == i)
+  t1 <- filter(first_profiles, lovbio == i)
+  #t1 <- filter(descent_profiles, lovbio == i)
   t2 <- filter(hplc, id == i)
   if(i == "lovbio079b"){
     t2 <- filter(t2, date != "2015-03-20")
@@ -102,9 +104,10 @@ for (i in lovbio){
 
 
 merged_dist$lag <- merged_dist$date.y - merged_dist$new_date
+table(merged_dist$lag)
 
 ggplot(filter(merged_dist, chla_qc < 4))+
-  geom_point(aes(x = tchla, y = chla, colour = as.numeric(lag)))
+  geom_point(aes(x = tchla, y = chl_smooth, colour = as.numeric(lag)))
 
 merged_dist_clean <- filter(merged_dist)
 
@@ -132,7 +135,7 @@ NAT_LAS_list <- c("lovbio014b", "lovbio030b", "lovbio032b", "lovbio028b", "lovbi
 NAT_LAS <- filter(merged_dist_clean, lovbio %in% NAT_LAS_list)
 LAS_profiles <- filter(first_profiles, lovbio %in% NAT_LAS$lovbio)
 ggplot(LAS_profiles)+
-  geom_path(aes(x = chla_adjusted, y = -pres, colour = lovbio))+
+  geom_path(aes(x = chl_smooth, y = -pres, colour = lovbio))+
   ylim(-250,0)
 
 ggplot(NAT_LAS)+
@@ -210,7 +213,7 @@ position_tak <- cbind(hplc_tak$lon, hplc_tak$lat)
 tak_profiles <- first_profiles[grep("takapm", first_profiles$lovbio),]
 
 
-merged_dist2 <- data.frame(matrix(ncol = 28, nrow = 0))
+merged_dist2 <- data.frame(matrix(ncol = 29, nrow = 0))
 
 for (i in unique(tak_profiles$lovbio)){
   t <- filter(tak_profiles, lovbio == i)
@@ -229,7 +232,7 @@ merged_dist2 <- filter(merged_dist2, is.na(chla) == FALSE)
 merged_dist2 <- filter(merged_dist2, chla_adjusted_qc != 4)
 
 ggplot(merged_dist2)+
-  geom_point(aes(x = tchla, y = chla))+
+  geom_point(aes(x = tchla, y = chl_smooth))+
   ylim(0,2.5)
 
 #Soclim####
@@ -264,17 +267,26 @@ ggplot(merged_mduf)+
 #merge all database####
 
 
-merged_data <- select(merged_dist_clean, date.y, id.x, depth.x, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
-merged_data2 <- select(merged_dist2, date.y, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
+merged_data <- select(merged_dist_clean, date.y, date.x, id.x, depth.x, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc, chl_smooth)
+merged_data2 <- select(merged_dist2, date.y, date.x, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc, chl_smooth)
 
-merged_data <- rename_(merged_data, "date" = "date.y", "lovbio" = "id.x", "depth" = "depth.x")
-merged_data2 <- rename_(merged_data2, "date" = "date.y")
+merged_data <- rename_(merged_data, "lovbio" = "id.x", "depth" = "depth.x")
+merged_data2 <- rename_(merged_data2)
 
-merged_soclim <- select(merged_soclim, date, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
+merged_soclim <- select(merged_soclim, date, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc, chl_smooth)
 
-merged_mduf <- select(merged_mduf, date, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc)
+merged_mduf <- select(merged_mduf, date, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc, chl_smooth)
+
+merged_data2$'date.x' <- date(merged_data2$'date.x')
+merged_data$'date.x' <- as_date(merged_data$'date.x')
 
 merged_full <- bind_rows(merged_data, merged_data2)
+table(merged_full$date.y - merged_full$date.x)
+merged_full <- merged_full %>% mutate(lag = abs(date.x - date.y)) %>% 
+  filter(lag < 2) %>% 
+  select(-date.x) %>%
+  rename_('date' = 'date.y')
+
 merged_full <- bind_rows(merged_full, merged_soclim)
 merged_full <- bind_rows(merged_full, merged_mduf)
 
@@ -296,7 +308,7 @@ ggplot(merged_full)+
 ggsave("argo/Plots/merge_map.png", scale = 2)
 
 ggplot(merged_full)+
-  geom_point(aes(x = tchla, y = chla))
+  geom_point(aes(x = tchla, y = chl_smooth))
 
 table(merged_full$profile)
 
@@ -339,6 +351,9 @@ merged_argo <- merged_full %>% mutate(  zze = depth /ze,
                                         picoquanti = pico * tchla) %>% ungroup()
 
 table(merged_argo$optical_layer)
+merged_argo <- filter(merged_argo, optical_layer < 4)
+ggplot(merged_argo)+
+  geom_point(aes(x = tchla, y = chl_smooth, colour = lovbio))
 
 
 

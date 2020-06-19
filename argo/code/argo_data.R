@@ -131,7 +131,7 @@ nc_df <- nc_df %>% select(-down)
 #write_csv(argo_data, "Data/argo/first_profiles")
 #write_csv(refbis, "Scripts/Data/argo/ref_bis")
     
-
+argo_data2 <- read_csv('Data/argo/first_profiles')
 # which(duplicated(merged$tchla))
 # 
 # subref <- subref[grep("lovbio", subref$lovbio),]

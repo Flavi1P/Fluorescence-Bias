@@ -19,18 +19,6 @@ merged_argo <- filter(merged_argo, lovbio != "lovbio067c" & lovbio != "lovbio083
 merged_argo <- filter(merged_argo, !(lovbio %in% NAT_IRS_list))
 
 
-
-ggplot(merged_argo)+
-  geom_point(aes(x = lon.x, y = lat.x, colour = "hplc"), size = 3)+
-  geom_point(aes(x = lon.y, y = lat.y, colour = "argo"))+
-  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
-  coord_quickmap()
-
-ggplot(merged_argo)+
-  geom_point(aes(x = lon.y, y = lat.y, colour = ze))+
-  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
-  coord_quickmap()+
-  scale_color_viridis_c()
 #a_sol_ph calculation####
 
 spectre <- read_excel("Biosope/Data/Spectres_annick.xlsx")
@@ -41,14 +29,26 @@ spectre470 <- filter(spectre, lambda == 470)
 merged_argo <- merged_argo %>% mutate(abs_470 = peri * spectre470$peri + but * spectre470$x19_bf + hex * spectre470$x19_hf + fuco * spectre470$fuco + allo * spectre470$allox + chla * spectre470$chl_a + spectre470$zea * zea + spectre470$chl_b * tchlb,
                         protect_470 =  spectre470$zea * zea,
                         a_ps_470 = abs_470 - protect_470,
-                        fluo = chla_adjusted * 2,
+                        fluo = chl_smooth * 2,
                         ratio = fluo/tchla,
-                        phi_app = ratio/a_ps_470)
+                        phi_app = ratio/abs_470) %>% filter(ratio < 100)
 
-ggplot(problem)+
+ggplot(merged_argo)+
+  geom_point(aes(y = chl_smooth, x = a_ps_470))+
+  geom_point(aes(x = a_ps_470, y = tchla, colour = 'green'))
+
+table_pig <- select(merged_argo, phi_app, pigments, tchla, fluo, ratio) %>%
+  mutate(pigsum = rowSums(select(., pigments), na.rm = TRUE)) %>% 
+  pivot_longer(., pigments, names_to = 'pigment', values_to = 'concentration')
+
+ggplot(filter(table_pig, concentration > 0 & phi_app > 0 & phi_app < 5000))+
+  geom_point(aes(y  = phi_app, x = concentration, colour = pigment), method = 'lm')+
+  coord_trans(x = 'log', y = 'log')+
+  facet_wrap(.~ pigment)
+
+ggplot(merged_argo)+
   geom_point(aes(x = a_ps_470, y = ratio, colour = lovbio))
 
-problem <- filter(merged_argo, ratio < 4 | a_ps_470 > 0.01)
 
 ggplot(problem)+
   geom_point(aes(x = a_ps_470, y = ratio, colour = lovbio))+

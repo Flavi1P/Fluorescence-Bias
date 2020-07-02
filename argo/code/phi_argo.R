@@ -37,7 +37,7 @@ ggplot(merged_argo)+
   geom_point(aes(y = chl_smooth, x = a_ps_470))+
   geom_point(aes(x = a_ps_470, y = tchla, colour = 'green'))
 
-table_pig <- select(merged_argo, phi_app, pigments, tchla, fluo, ratio) %>%
+table_pig <- select(merged_argo, phi_app, pigments, tchla, fluo, ratio, lovbio) %>%
   mutate(pigsum = rowSums(select(., pigments), na.rm = TRUE)) %>% 
   pivot_longer(., pigments, names_to = 'pigment', values_to = 'concentration')
 
@@ -46,9 +46,13 @@ ggplot(filter(table_pig, concentration > 0 & phi_app > 0 & phi_app < 5000))+
   coord_trans(x = 'log', y = 'log')+
   facet_wrap(.~ pigment)
 
-ggplot(merged_argo)+
-  geom_point(aes(x = a_ps_470, y = ratio, colour = lovbio))
+ggplot(filter(table_pig, concentration > 0 & phi_app > 0 & phi_app < 5000))+
+  geom_point(aes(y = phi_app, x = tchla, colour = lovbio))+
+  coord_trans(x = 'log', y = 'log')
 
+
+ggplot(merged_argo)+
+  geom_point(aes(x = a_ps_470, y = ratio, colour = lovbio), colour = )
 
 ggplot(problem)+
   geom_point(aes(x = a_ps_470, y = ratio, colour = lovbio))+

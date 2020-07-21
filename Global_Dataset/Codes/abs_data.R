@@ -7,10 +7,18 @@ library(ggrepel)
 library(treemap)
 library(sf)
 library(treemapify)
+library(zoo)
+library(caTools)
 map_vec <- read_csv("Data/map_vec")
 
 types <- c('c', 'c', rep('n', 445))
 lov_afc <- read_csv('Data/lov_afc.csv', col_types = as.list(types))
+
+ggplot(lov_afc)+
+  geom_point(aes(x = lon, y = lat, colour = campagne))+
+  geom_polygon(aes(x = long, y = lat, group = group), data = map_vec)+
+  guides(colour = FALSE) +
+  coord_quickmap()
 
 lov_afc <- lov_afc %>% mutate(chla_470 = real470/t_chla,
                               chla_440 = real440/t_chla)
@@ -131,6 +139,8 @@ exp((AIC(model_440)-AIC(model_470))/2)
 
 df_model <- data.frame('chla' = lov_model$t_chla , 'resid440' = model_440$residuals, 'resid470' = model_470$residuals)
 
+lov_afc$campagne_id <- sub("[1-9](.*)", "", lov_afc$campagne)
+
 lov_afc %>% select(t_chla, real440, real470, campagne_id) %>% 
   pivot_longer(2:3, names_to = 'wl', values_to = 'abs') %>% 
   ggplot()+
@@ -166,7 +176,7 @@ lov_afc$code <- apply(st_intersects(longhurst_trans, pnts_trans, sparse = FALSE)
 lov_afc$code <- as.character(lov_afc$code)
 table(lov_afc$code)
 
-lov_afc$campagne_id <- sub("[1-9](.*)", "", lov_afc$campagne)
+
 
 rsq_camp <- data.frame('chl' = seq(0.02, 1, 0.05),
                             'biosope_440' = NA,
@@ -203,12 +213,7 @@ rsq_camp$diffbio <- rsq_camp$biosope_440 - rsq_camp$biosope_470
 rsq_camp$diffpeace <- rsq_camp$peacetime_440 - rsq_camp$peacetime_470
 rsq_camp$diffso <- rsq_camp$soclim_440 - rsq_camp$soclim_470
 
-<<<<<<< HEAD
 
-
-
-=======
->>>>>>> 9c9709c2c3e6d40909703f4c598a388759e1f0c2
 ggplot(rsq)+
   geom_path(aes(x = chl, y = diff, colour = 'aps'), size = 1.2)+
   geom_point(aes(x = chl, y = diff))+

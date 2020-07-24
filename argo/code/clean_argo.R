@@ -23,10 +23,10 @@ ggplot(data_argo)+
 data_argo <- data_argo %>% group_by(id, type) %>% 
   mutate(chl_smooth = rollmean(chla_adjusted, 20, fill = c(0,0,0)))
 
-# ggplot(data_argo)+
-#   geom_path(aes(x = chl_smooth, y = - pres, colour = type))+
-#   ylim(-300, 0)+
-#   facet_wrap(.~id, scales = 'free_x')
+ggplot(data_argo)+
+  geom_path(aes(x = chl_smooth, y = - pres, colour = type))+
+  ylim(-300, 0)+
+  facet_wrap(.~id, scales = 'free_x')
 # Blurry signal 6901580 6902735 6902739
 
 exclude_id <- c(6901580, 6902735, 6902739, 6901032, 6901524, 6901649, 6902739, 6902743, 6902880, 6902742, 6902735, 6901521)
@@ -36,10 +36,10 @@ data_argo_filter <- filter(data_argo, !id %in% exclude_id) %>% filter((id %in% B
 test <- data_argo_filter %>% filter(id == 6901574)
 unique(test$type)
 
-# ggplot(data_argo_filter)+
-#   geom_path(aes(x = chl_smooth, y = - pres, colour = type))+
-#   ylim(-200, 0)+
-#   facet_wrap(.~id, scales = 'free_x')
+ggplot(data_argo_filter)+
+   geom_path(aes(x = chl_smooth, y = - pres, colour = type))+
+   ylim(-200, 0)+
+   facet_wrap(.~id, scales = 'free_x')
 
 
 argo_afc <- data_argo_filter %>% 
@@ -108,4 +108,4 @@ argo_tall <- argo_afc %>% pivot_longer(2:201, names_to = 'depth') %>%
 ggplot(argo_tall)+
   geom_path(aes(x = value, y = -depth2, colour = group))+
   facet_wrap(.~ id, scale = 'free_x')
-#write_csv(data_argo_filter, 'Data/argo/clean_argo')
+#write_csv(data_argo_filter, 'Data/argo/data_argo_filter')

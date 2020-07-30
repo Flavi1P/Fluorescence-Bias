@@ -379,7 +379,7 @@ ggplot(database)+
   scale_color_brewer(palette = 'Set1', name = '')+
   ylim(-200, 0)
 
-cruise <- tibble('lovbio' = unique(database$lovbio), 'cruise' = c('REY1', 'REY1', 'Labrador', 'Labrador', 'OISO', 'OUTPACE', 'Bioargomed', 'NA', 'Takuvik', 'Bioargomed', 'Bioargomed', 'Bioargomed', 'Bioargomed', 'Bioargomed','Moose', 'Boussole', 'Bioargomed', 'Bioargomed', 'REY1', 'REY1', 'REY1', 'REY1', 'REY1', 'GEOVIDE', 'Islande2013', 'Islande2013', 'Islande2013', 'GEOVIDE', 'Islande2013', 'Islande2013', 'Islande2013', 'Islande2013', 'Labrador', 'Labrador', 'OISO', 'OISO', 'OISO', 'OISO', 'OUTPACE', 'Dewex', 'Moose', 'OUTPACE', 'Takuvik', 'Dewex', 'Takuvik', 'Takuvik', 'Bioargomed', 'NA'))
+cruise <- tibble('lovbio' = unique(database$lovbio), 'cruise' = c('REY1', 'REY1', 'Labrador', 'Labrador', 'OISO', 'OUTPACE', 'Bioargomed', 'Soclim', 'Takuvik', 'Bioargomed', 'Bioargomed', 'Bioargomed', 'Bioargomed', 'Bioargomed','Moose', 'Boussole', 'Bioargomed', 'Bioargomed', 'REY1', 'REY1', 'REY1', 'REY1', 'REY1', 'GEOVIDE', 'Islande2013', 'Islande2013', 'Islande2013', 'GEOVIDE', 'Islande2013', 'Islande2013', 'Islande2013', 'Islande2013', 'Labrador', 'Labrador', 'OISO', 'OISO', 'OISO', 'OISO', 'OUTPACE', 'Dewex', 'Moose', 'OUTPACE', 'Takuvik', 'Dewex', 'Takuvik', 'Takuvik', 'Bioargomed', 'NA'))
 database <- left_join(database, cruise)
 
 ggplot(database)+

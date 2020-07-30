@@ -110,7 +110,7 @@ table(merged_dist$lag)
 ggplot(filter(merged_dist, chla_qc < 4))+
   geom_point(aes(x = tchla, y = chl_smooth, colour = as.numeric(lag)))
 
-merged_dist_clean <- filter(merged_dist, abs(lag) < 2)
+merged_dist_clean <- filter(merged_dist, lag < 14)
 
 lag_by_float <- data.frame("lovbio" = NA, "lag_min" = NA)
 for (i in unique(merged_dist$lovbio)){
@@ -272,6 +272,7 @@ merged_data <- select(merged_dist_clean, date.y, date.x, id.x, depth.x, lon.x, l
 merged_data2 <- select(merged_dist2, date.y, date.x, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc, chl_smooth)
 
 merged_data <- rename_(merged_data, "lovbio" = "id.x", "depth" = "depth.x")
+
 merged_data2 <- rename_(merged_data2)
 
 merged_soclim <- select(merged_soclim, date, lovbio, depth, lon.x, lat.x, lon.y, lat.y, pigments, tchla, chla, chla_qc, chla_adjusted, chla_adjusted_qc, chl_smooth)
@@ -282,9 +283,10 @@ merged_data2$'date.x' <- date(merged_data2$'date.x')
 merged_data$'date.x' <- as_date(merged_data$'date.x')
 
 merged_full <- bind_rows(merged_data, merged_data2)
+
+
 table(merged_full$date.y - merged_full$date.x)
 merged_full <- merged_full %>% mutate(lag = abs(date.x - date.y)) %>% 
-  filter(lag < 2) %>% 
   select(-date.x) %>%
   rename_('date' = 'date.y')
 
@@ -354,8 +356,9 @@ merged_argo <- merged_full %>% mutate(  zze = depth /ze,
 
 table(merged_argo$optical_layer)
 merged_argo$optical_layer <- replace_na(merged_argo$optical_layer, 0)
-merged_argo <- filter(merged_argo, optical_layer < 4)
-test <- filter(merged_argo, lovbio == 'lovbio103c')
+
+#merged_argo <- filter(merged_argo, optical_layer < 4)
+
 
 ggplot(merged_argo)+
   geom_point(aes(x = tchla, y = chl_smooth, colour = allo))+

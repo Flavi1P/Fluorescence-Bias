@@ -251,12 +251,12 @@ merged_soclim <- merged_soclim %>% filter(is.na(chla) == FALSE) %>% group_by(lov
 merged_soclim <- filter(merged_soclim, lovbio %in% ref_bis$lovbio & lovbio != "lovbio103c" | lovbio == "lovbio103c" & lon.x > 72) 
 
 ggplot(merged_soclim)+
-  geom_point(aes(x = tchla, y = chla))
+  geom_point(aes(x = chla, y = chla))
 
 #mobydick####
 
 hplc_mduf <- read_csv("Data/argo/hplc_mduf")
-hplc_mduf$date <- date(hplc_mduf$date) +1
+hplc_mduf$date <- date(hplc_mduf$date) + 1
 
 merged_mduf <- left_join(hplc_mduf, filter(first_profiles, lovbio == "lovbio111b"), by = c("date", "depth")) %>% filter(is.na(chla) == FALSE)
 
@@ -306,7 +306,7 @@ ggplot(merged_full)+
   theme_bw(base_size = 20)+
   xlab("lon")+ ylab("lat")
 
-ggsave("argo/Plots/merge_map.png", scale = 2)
+#ggsave("argo/Plots/merge_map.png", scale = 2)
 
 ggplot(merged_full)+
   geom_point(aes(x = tchla, y = chl_smooth))
@@ -351,8 +351,12 @@ merged_argo <- merged_full %>% mutate(  zze = depth /ze,
                                         nanoquanti = nano * tchla,
                                         picoquanti = pico * tchla) %>% ungroup()
 
+
 table(merged_argo$optical_layer)
+merged_argo$optical_layer <- replace_na(merged_argo$optical_layer, 0)
 merged_argo <- filter(merged_argo, optical_layer < 4)
+test <- filter(merged_argo, lovbio == 'lovbio103c')
+
 ggplot(merged_argo)+
   geom_point(aes(x = tchla, y = chl_smooth, colour = allo))+
   coord_trans(x = 'log', y = 'log')
@@ -365,7 +369,7 @@ ggplot(database)+
   geom_point(aes(x = allo, y = -depth, colour = 'allo'))+
   geom_point(aes(x = zea, y = -depth, colour = 'zea'))+
   geom_point(aes(x = fuco, y = -depth, colour = 'fuco'))+
-  facet_wrap(.~id, scales = 'free_x')+
+  facet_wrap(.~lovbio, scales = 'free_x')+
   theme_light()+
   theme(
     panel.grid.major.y = element_blank(),

@@ -37,7 +37,7 @@ ggplot(merged_argo)+
   geom_point(aes(y = chl_smooth, x = a_ps_470))+
   geom_point(aes(x = a_ps_470, y = tchla, colour = 'green'))
 
-table_pig <- select(merged_argo, phi_app, pigments, tchla, fluo, ratio, lovbio) %>%
+table_pig <- select(merged_argo, phi_app, pigments, tchla, fluo, ratio, abs_470, lovbio) %>%
   mutate(pigsum = rowSums(select(., pigments), na.rm = TRUE)) %>% 
   pivot_longer(., pigments, names_to = 'pigment', values_to = 'concentration')
 
@@ -46,9 +46,26 @@ ggplot(filter(table_pig, concentration > 0 & phi_app > 0 & phi_app < 5000))+
   coord_trans(x = 'log', y = 'log')+
   facet_wrap(.~ pigment)
 
-ggplot(filter(table_pig, concentration > 0 & phi_app > 0 & phi_app < 5000))+
-  geom_point(aes(y = phi_app, x = tchla, colour = lovbio))+
+table_pig <- filter(table_pig,concentration > 0 & phi_app > 0 & phi_app < 5000) %>% 
+  mutate(phi_app = phi_app/max(.$phi_app))
+
+ggplot(table_pig)+
+  geom_point(aes(y = phi_app, x = tchla, colour = ratio))+
+  coord_trans(x = 'log', y = 'log')+
+  scale_color_viridis_c(name = 'fluo/chla')
+
+
+table_pig <- mutate(table_pig, aspe = (abs_470/tchla),
+                    phi_app2 = ratio/aspe)
+
+ggplot(table_pig)+
+  geom_point(aes(y = aspe, x = tchla))+
   coord_trans(x = 'log', y = 'log')
+
+ggplot(table_pig)+
+  geom_point(aes(y = phi_app2, x = tchla, colour = ratio))+
+  coord_trans(x = 'log', y = 'log')+
+  scale_color_viridis_c(name = 'fluo/chla')
 
 
 ggplot(merged_argo)+
